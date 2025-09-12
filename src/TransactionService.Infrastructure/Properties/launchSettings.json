@@ -1,9 +1,0 @@
-{
-    "RabbitMq": {
-        "HostName": "localhost",
-        "Port": 5672,
-        "UserName": "guest",
-        "Password": "guest",
-        "QueueName": "transaction_created"
-    }
-}

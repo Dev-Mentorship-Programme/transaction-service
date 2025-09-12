@@ -2,7 +2,144 @@
 *.http
 
 # Ignore build outputs
-bin/
-obj/
-logs/
+## Ignore Visual Studio temporary files, build results, and
+## user-specific files
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Uncomment if you have tasks that create the project's static files in wwwroot
+#wwwroot/
+
+# Visual Studio Code
+.vscode/
+.history/
+
+# Rider
+.idea/
+*.sln.iml
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# NuGet Packages
+*.nupkg
+# The packages folder can be ignored if you use package restore
+**/packages/*
+!**/packages/build/
+!**/packages/repositories.config
+
+# Entity Framework
+*.edmx.*
+*.dbmdl
+[Mm]igrations/
+
+# DotCover
+*.dotCover
+
+# StyleCop
+StyleCopReport.xml
+
+# TFS
+$tf/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# VS Code directories
+.vscode/
+.vscode-test/
+
+# Others
+*.vspscc
+*.vssscc
+*.cache
+*.pdb
+*.mdb
+*.log
+*.vs/
+*.dbmdl
+*.jfm
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# DotNet CLI
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Node.js (if using frontend with Node)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Webpack/Babel/TypeScript
+dist/
+build/
+tmp/
+temp/
+
+# Azure Functions
+.local.settings.json
+
+# Docker
+# Dockerfile.*
+# docker-compose.*
+
+# Secrets
+secrets.json
+
+# Others
+*.swp
+*.bak
+*.tmp
+*.orig
+*.rej
+*.sln.ide
+
+# Ignore test results
 TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Ignore publish output
+publish/
+out/
+
+# Ignore global.json
+global.json
+
+obj/
+
+logs/

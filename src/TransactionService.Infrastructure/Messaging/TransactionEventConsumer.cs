@@ -9,20 +9,14 @@ using TransactionService.Domain.Interfaces;
 
 namespace TransactionService.Infrastructure.Messaging
 {
-    public class TransactionEventConsumer : ITransactionEventConsumer
+    public class TransactionEventConsumer(
+        IOptions<RabbitMqSettings> options,
+        ILogger<TransactionEventConsumer> logger) : ITransactionEventConsumer
     {
-        private readonly RabbitMqSettings _settings;
-        private readonly ILogger<TransactionEventConsumer> _logger;
+        private readonly RabbitMqSettings _settings = options.Value;
+        private readonly ILogger<TransactionEventConsumer> _logger = logger;
         private IConnection? _connection;
         private IChannel? _channel;
-
-        public TransactionEventConsumer(
-            IOptions<RabbitMqSettings> options,
-            ILogger<TransactionEventConsumer> logger)
-        {
-            _settings = options.Value;
-            _logger = logger;
-        }
 
         public async Task StartConsumingAsync(CancellationToken cancellationToken)
         {
@@ -34,15 +28,10 @@ namespace TransactionService.Infrastructure.Messaging
                 Password = _settings.Password
             };
 
-            _connection = await factory.CreateConnectionAsync();
-            _channel = await _connection.CreateChannelAsync();
+            _connection = await factory.CreateConnectionAsync(cancellationToken);
+            _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
-            await _channel.QueueDeclareAsync(
-                queue: _settings.QueueName,
-                durable: true,
-                exclusive: false,
-                autoDelete: false,
-                arguments: null);
+            await _channel.QueueDeclareAsync(queue: _settings.QueueName, durable: true, exclusive: false, autoDelete: false, arguments: null, cancellationToken: cancellationToken);
 
             var consumer = new AsyncEventingBasicConsumer(_channel);
             consumer.ReceivedAsync += async (sender, ea) =>
@@ -63,10 +52,7 @@ namespace TransactionService.Infrastructure.Messaging
                 await Task.CompletedTask;
             };
 
-            await _channel.BasicConsumeAsync(
-                queue: _settings.QueueName,
-                autoAck: true,
-                consumer: consumer);
+            await _channel.BasicConsumeAsync(queue: _settings.QueueName, autoAck: true, consumer: consumer, cancellationToken: cancellationToken);
 
             _logger.LogInformation("Started consuming from queue: {QueueName}", _settings.QueueName);
         }

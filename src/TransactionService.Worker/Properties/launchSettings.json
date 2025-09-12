@@ -5,7 +5,12 @@
       "dotnetRunMessages": true,
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development",
-        "WORKER_QUEUE": "transactions"
+        "WORKER_QUEUE": "transactions",
+        "RabbitMq__HostName": "localhost",
+        "RabbitMq__Port": "5672",
+        "RabbitMq__UserName": "guest",
+        "RabbitMq__Password": "guest",
+        "RabbitMq__QueueName": "transaction_created"
       }
     }
   },
@@ -14,6 +19,6 @@
     "Port": 5672,
     "UserName": "guest",
     "Password": "guest",
-    "QueueName": "transaction_created"
+    "QueueName": "transaction-events"
   }
 }

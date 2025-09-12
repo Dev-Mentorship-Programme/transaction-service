@@ -6,14 +6,16 @@ using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using TransactionService.Domain.Interfaces;
 using TransactionService.Domain.Events;
+using Microsoft.Extensions.Logging;
 
 namespace TransactionService.Infrastructure.Messaging
 {
-    public class TransactionEventPublisher(IOptions<RabbitMqSettings> options) : ITransactionEventPublisher, IDisposable, IAsyncDisposable
+    public class TransactionEventPublisher(IOptions<RabbitMqSettings> options, ILogger<TransactionEventPublisher> logger) : ITransactionEventPublisher, IDisposable, IAsyncDisposable
     {
         private IChannel? _channel;
         private IConnection? _connection;
         private readonly RabbitMqSettings _settings = options.Value ?? throw new ArgumentNullException(nameof(options));
+        private readonly ILogger<TransactionEventPublisher> _logger = logger;
         private bool _disposed = false;
 
         // Initialize connection and channel - call this method during startup
@@ -42,10 +44,16 @@ namespace TransactionService.Infrastructure.Messaging
         public async Task PublishAsync(TransactionCreatedEvent @event)
         {
             if (_disposed)
-                throw new ObjectDisposedException(nameof(TransactionEventPublisher));
+            {
+                ObjectDisposedException.ThrowIf(_disposed, this);
+            }
 
             if (_channel == null)
+            {
+                _logger.LogError("Publisher not initialized. Call InitializeAsync first.");
+                _logger.LogError("Publisher not initialized. Call Method: {MethodName} first", nameof(InitializeAsync));
                 throw new InvalidOperationException("Publisher not initialized. Call InitializeAsync first.");
+            }
 
             try
             {
@@ -61,6 +69,7 @@ namespace TransactionService.Infrastructure.Messaging
             catch (Exception ex)
             {
                 // Log the exception or handle it appropriately
+                _logger.LogError(ex, "Publisher not initialized. Call InitializeAsync first.");
                 throw new InvalidOperationException($"Failed to publish event: {ex.Message}", ex);
             }
         }

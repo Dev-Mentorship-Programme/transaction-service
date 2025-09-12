@@ -34,7 +34,13 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
+});
+
 
 // MediatR
 builder.Services.AddMediatR(typeof(GetTransactionHandler).Assembly);
@@ -68,7 +74,11 @@ app.UseSerilogRequestLogging();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Transaction Service API v1");
+            c.RoutePrefix = string.Empty; // Serve Swagger UI at root
+        });
 }
 
 app.UseRouting();
@@ -132,22 +142,9 @@ app.MapHealthChecks("/health", new HealthCheckOptions
     }
 });
 
-// try
-// {
-//     using var scope = app.Services.CreateScope();
-//     var publisherFactory = scope.ServiceProvider.GetRequiredService<ITransactionEventPublisherFactory>();
-
-//     // Test connection at startup
-//     var testPublisher = await publisherFactory.CreateAsync();
-//     Log.Information("✅ RabbitMQ connection established successfully");
-// }
-// catch (Exception ex)
-// {
-//     Log.Error(ex, "❌ Failed to connect to RabbitMQ");
-//     // Decide whether to continue or exit based on your requirements
-// }
-
 app.MapControllers();
+
+app.MapGet("/", () => "Transaction Service API is running.");
 
 app.Run();
 

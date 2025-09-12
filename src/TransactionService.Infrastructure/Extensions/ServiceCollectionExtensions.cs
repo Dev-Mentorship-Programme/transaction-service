@@ -28,8 +28,7 @@ namespace TransactionService.Infrastructure.Extensions
             services.AddScoped<ITransactionEventConsumer, TransactionEventConsumer>();
 
             // Add health checks
-            services.AddHealthChecks()
-                .AddCheck<RabbitMqHealthCheck>("rabbitmq");
+            services.AddHealthChecks().AddCheck<RabbitMqHealthCheck>("rabbitmq");
 
             return services;
         }
