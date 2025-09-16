@@ -27,11 +27,12 @@
     <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
     <PackageReference Include="MediatR" Version="11.1.0" />
     <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TransactionService.Application\TransactionService.Application.csproj" />
-    <ProjectReference Include="..\TransactionService.Infrastructure\TransactionService.Infrastructure.csproj" />
+    <ProjectReference Include="../TransactionService.Application/TransactionService.Application.csproj" />
+    <ProjectReference Include="../TransactionService.Infrastructure/TransactionService.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

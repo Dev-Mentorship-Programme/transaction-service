@@ -1,20 +1,13 @@
 using System.Diagnostics;
 using System.Text.Json;
-using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using MediatR;
 using System.Reflection;
 using TransactionService.Grpc;
 using TransactionService.Application.Handlers;
-using TransactionService.Infrastructure.DocGen;
-using TransactionService.Infrastructure.Signing;
 using TransactionService.Infrastructure.Extensions;
-using TransactionService.Infrastructure.Messaging;
-using TransactionService.Infrastructure.Interfaces;
-using TransactionService.Infrastructure.Factories;
-using Grpc.Net.ClientFactory;
+using TransactionService.Infrastructure.Data;
 using Serilog;
 
 // Configure Serilog early to capture startup logs
@@ -41,17 +34,9 @@ builder.Services.AddSwaggerGen(c =>
     c.IncludeXmlComments(xmlPath);
 });
 
-
 // MediatR
 builder.Services.AddMediatR(typeof(GetTransactionHandler).Assembly);
-builder.Services.AddMediatR(typeof(GenerateReceiptHandler).Assembly);
-builder.Services.AddMediatR(typeof(CreateShareableLinkHandler).Assembly);
-
-// Infrastructure bindings
-builder.Services.AddSingleton<ITransactionEventPublisherFactory, TransactionEventPublisherFactory>();
-builder.Services.AddSingleton<IDocumentGenerator, PdfDocumentGenerator>();
-builder.Services.AddSingleton<ILinkSigner>(sp => new HmacLinkSigner(builder.Configuration["Signing:Key"] ?? "dev-key"));
-builder.Services.AddSingleton<IInMemoryQueue, InMemoryQueue>();
+builder.Services.AddMediatR(typeof(CreateTransactionCommandHandler).Assembly);
 
 // Add health checks
 builder.Services.AddHealthChecks();
@@ -87,11 +72,11 @@ app.UseAuthorization();
 // Security Headers
 app.Use(async (context, next) =>
 {
-    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-    context.Response.Headers["X-Frame-Options"] = "DENY";
-    context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+    context.Response.Headers.XContentTypeOptions = "nosniff";
+    context.Response.Headers.XFrameOptions = "DENY";
+    context.Response.Headers.XXSSProtection = "1; mode=block";
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'";
+    context.Response.Headers.ContentSecurityPolicy = "default-src 'self'";
 
     await next();
 });
@@ -143,6 +128,26 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 });
 
 app.MapControllers();
+
+// Run database migrations on startup
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        
+        logger.LogInformation("Starting database migration...");
+        await context.Database.MigrateAsync();
+        logger.LogInformation("Database migration completed successfully.");
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating the database.");
+        throw;
+    }
+}
 
 app.MapGet("/", () => "Transaction Service API is running.");
 

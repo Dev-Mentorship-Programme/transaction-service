@@ -50,7 +50,6 @@ namespace TransactionService.Infrastructure.Messaging
 
             if (_channel == null)
             {
-                _logger.LogError("Publisher not initialized. Call InitializeAsync first.");
                 _logger.LogError("Publisher not initialized. Call Method: {MethodName} first", nameof(InitializeAsync));
                 throw new InvalidOperationException("Publisher not initialized. Call InitializeAsync first.");
             }

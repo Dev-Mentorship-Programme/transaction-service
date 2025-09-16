@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace TransactionService.Domain.Interfaces
 {
-    public interface ITransactionEventConsumer : IAsyncDisposable
+    public interface ICreateTransactionEventConsumer : IAsyncDisposable
     {
         Task StartConsumingAsync(CancellationToken cancellationToken);
     }

@@ -9,7 +9,7 @@ namespace TransactionService.Domain.Interfaces
     public interface ITransactionFactory
     {
         Transaction Create(
-            Guid sourceAccountId,
+            Guid accountId,
             Guid destinationAccountId,
             decimal amount,
             decimal openingBalance,
@@ -18,14 +18,16 @@ namespace TransactionService.Domain.Interfaces
             TransactionType type,
             TransactionChannel channel,
             TransactionCurrency currency,
-            string? reference = null
+            string? reference = null,
+            string? metadata = null
         );
 
         Transaction Update(
             Transaction transaction,
             TransactionStatus status,
             decimal? closingBalance,
-            string? narration
+            string? narration,
+            string? metadata
         );
     }
 }

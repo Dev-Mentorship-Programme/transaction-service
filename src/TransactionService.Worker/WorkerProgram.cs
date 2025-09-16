@@ -1,3 +1,4 @@
+using System;
 using TransactionService.Infrastructure.Messaging;
 using TransactionService.Infrastructure.DocGen;
 using TransactionService.Infrastructure.Signing;

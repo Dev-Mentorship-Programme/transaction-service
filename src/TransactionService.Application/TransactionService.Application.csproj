@@ -2,12 +2,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TransactionService.Domain\TransactionService.Domain.csproj" />
-    <ProjectReference Include="..\TransactionService.Infrastructure\TransactionService.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
     <PackageReference Include="MediatR" Version="11.1.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
   </ItemGroup>
 
   <PropertyGroup>

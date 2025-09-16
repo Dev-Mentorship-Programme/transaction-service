@@ -7,5 +7,4 @@ namespace TransactionService.Domain.Events
         public Guid TransactionId { get; } = transactionId;
         public DateTime CreatedAt { get; } = DateTime.UtcNow;
     }
-
 }

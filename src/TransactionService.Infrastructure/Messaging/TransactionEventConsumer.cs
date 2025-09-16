@@ -1,3 +1,5 @@
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
@@ -6,15 +8,17 @@ using System.Text;
 using System.Text.Json;
 using TransactionService.Domain.Events;
 using TransactionService.Domain.Interfaces;
+using TransactionService.Application.Commands;
 
 namespace TransactionService.Infrastructure.Messaging
 {
-    public class TransactionEventConsumer(
+    public class CreateTransactionEventConsumer(
         IOptions<RabbitMqSettings> options,
-        ILogger<TransactionEventConsumer> logger) : ITransactionEventConsumer
+        ILogger<CreateTransactionEventConsumer> logger, IServiceScopeFactory serviceScopeFactory) : ICreateTransactionEventConsumer
     {
         private readonly RabbitMqSettings _settings = options.Value;
-        private readonly ILogger<TransactionEventConsumer> _logger = logger;
+        private readonly ILogger<CreateTransactionEventConsumer> _logger = logger;
+        private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
         private IConnection? _connection;
         private IChannel? _channel;
 
@@ -38,11 +42,7 @@ namespace TransactionService.Infrastructure.Messaging
             {
                 try
                 {
-                    var body = ea.Body.ToArray();
-                    var message = Encoding.UTF8.GetString(body);
-                    var transactionEvent = JsonSerializer.Deserialize<TransactionCreatedEvent>(message);
-
-                    _logger.LogInformation("Consumed TransactionCreatedEvent: {TransactionId}", transactionEvent?.TransactionId);
+                    await ProcessMessageAsync(ea, cancellationToken);
                 }
                 catch (Exception ex)
                 {
@@ -55,6 +55,60 @@ namespace TransactionService.Infrastructure.Messaging
             await _channel.BasicConsumeAsync(queue: _settings.QueueName, autoAck: true, consumer: consumer, cancellationToken: cancellationToken);
 
             _logger.LogInformation("Started consuming from queue: {QueueName}", _settings.QueueName);
+        }
+
+        private async Task ProcessMessageAsync(BasicDeliverEventArgs ea, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var body = ea.Body.ToArray();
+                var message = Encoding.UTF8.GetString(body);
+                var transactionEvent = JsonSerializer.Deserialize<CreateTransactionEvent>(message);
+
+                if (transactionEvent == null)
+                {
+                    _logger.LogWarning("Received null transaction event, skipping message");
+                    await _channel!.BasicNackAsync(ea.DeliveryTag, false, false, cancellationToken);
+                    return;
+                }
+
+                _logger.LogInformation("Processing CreateTransactionEvent: {TransactionId}", transactionEvent.AccountId);
+
+                // Create a new scope for processing this message
+                await using var scope = _serviceScopeFactory.CreateAsyncScope();
+                
+                // Get MediatR from the scope and send the command directly
+                var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+                
+                // Create transaction using MediatR command directly
+                var command = new CreateTransactionCommand
+                {
+                    AccountId = transactionEvent.AccountId,
+                    DestinationAccountId = transactionEvent.DestinationAccountId,
+                    Amount = transactionEvent.Amount,
+                    OpeningBalance = transactionEvent.OpeningBalance,
+                    Narration = transactionEvent.Narration,
+                    Type = transactionEvent.Type,
+                    Currency = transactionEvent.Currency,
+                    Channel = transactionEvent.Channel,
+                    Metadata = JsonSerializer.Serialize(transactionEvent.Metadata),
+                };
+
+                var transactionId = await mediator.Send(command, cancellationToken);
+
+                // Acknowledge the message after successful processing
+                await _channel!.BasicAckAsync(ea.DeliveryTag, false, cancellationToken);
+                
+                _logger.LogInformation("Successfully processed CreateTransactionEvent: {TransactionId}", transactionId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing message from RabbitMQ");
+                
+                // Reject the message and don't requeue it to avoid infinite retry loops
+                // You might want to implement a dead letter queue or retry mechanism here
+                await _channel!.BasicNackAsync(ea.DeliveryTag, false, false, cancellationToken);
+            }
         }
 
         public async ValueTask DisposeAsync()

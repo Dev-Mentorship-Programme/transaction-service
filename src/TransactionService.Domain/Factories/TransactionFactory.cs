@@ -19,7 +19,8 @@ namespace TransactionService.Domain.Factories
             TransactionType type,
             TransactionChannel channel,
             TransactionCurrency currency,
-            string? reference = null
+            string? reference = null,
+            string? metadata = null
         )
         {
             return new Transaction
@@ -37,7 +38,8 @@ namespace TransactionService.Domain.Factories
                 Status = TransactionStatus.PENDING,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
-                Reference = reference ?? $"TR-{DateTime.UtcNow:yyyyMMddHHmmssfff}"
+                Reference = reference ?? $"TR-{DateTime.UtcNow:yyyyMMddHHmmssfff}",
+                Metadata = metadata
             };
         }
 
@@ -45,10 +47,12 @@ namespace TransactionService.Domain.Factories
             Transaction existing,
             TransactionStatus status,
             decimal? closingBalance = null,
-            string? narration = null
+            string? narration = null,
+            string? metadata = null
         )
         {
             if (!string.IsNullOrWhiteSpace(narration)) existing.Narration = narration;
+            if (!string.IsNullOrWhiteSpace(metadata)) existing.Metadata = metadata;
             if (closingBalance.HasValue) existing.ClosingBalance = closingBalance.Value;
 
             existing.Status = status;
