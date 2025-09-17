@@ -61,6 +61,9 @@ namespace TransactionService.Infrastructure.Data
                     .HasMaxLength(500)
                     .HasDefaultValue("Payment Transaction");
 
+                entity.Property(e => e.Metadata)
+                    .HasColumnType("text");
+
                 entity.Property(e => e.Reference)
                     .HasMaxLength(100)
                     .IsRequired();
