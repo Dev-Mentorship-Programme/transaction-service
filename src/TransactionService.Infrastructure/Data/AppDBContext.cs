@@ -10,7 +10,6 @@ namespace TransactionService.Infrastructure.Data
     {
         public DbSet<Transaction> Transactions { get; set; } = null!;
         
-        // Implement the interface property
         IQueryable<Transaction> IAppDbContext.Transactions => Transactions;
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -20,7 +19,6 @@ namespace TransactionService.Infrastructure.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Move your entity configuration here from the deleted class
             modelBuilder.Entity<Transaction>(entity =>
             {
                 entity.HasKey(e => e.Id);
