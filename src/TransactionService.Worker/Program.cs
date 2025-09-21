@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TransactionService.Worker;
+using TransactionService.Domain.Interfaces;
 using TransactionService.Infrastructure.Extensions;
 using TransactionService.Infrastructure.Messaging;
-using TransactionService.Domain.Interfaces;
 
 var executablePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
 var executableDirectory = Path.GetDirectoryName(executablePath) ?? Directory.GetCurrentDirectory();
