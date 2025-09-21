@@ -22,7 +22,15 @@ namespace TransactionService.Application.Handlers
                 var transactionId = request.TransactionId ?? Guid.NewGuid();
                 _logger.LogInformation("Creating transaction: {TransactionId}", transactionId);
 
-                // Check if transaction already exists (when TransactionId is provided from event)
+                // Check if account has a pending transaction (when TransactionId is provided from event)
+                var pendingTransaction = await _repository.GetPendingAsync(request.AccountId, cancellationToken);
+
+                if (pendingTransaction != null)
+                {
+                    _logger.LogInformation("Account {AccountId} has a pending transaction, returning existing ID", request.AccountId);
+                    return pendingTransaction.Id;
+                }
+
                 if (request.TransactionId.HasValue)
                 {
                     var existingTransaction = await _repository.GetByIdAsync(request.TransactionId.Value, cancellationToken);

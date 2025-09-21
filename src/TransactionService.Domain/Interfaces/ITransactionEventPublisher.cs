@@ -8,6 +8,7 @@ namespace TransactionService.Domain.Interfaces
 {
     public interface ITransactionEventPublisher
     {
-        Task PublishAsync(TransactionCreatedEvent @event);
+        Task InitializeAsync(CancellationToken cancellationToken = default);
+        Task PublishAsync(TransactionCreatedEvent @event, CancellationToken cancellationToken = default);
     }
 }

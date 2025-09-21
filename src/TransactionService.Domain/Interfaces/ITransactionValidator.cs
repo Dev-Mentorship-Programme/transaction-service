@@ -1,7 +1,7 @@
 using System;
 using TransactionService.Domain.Entities;
 
-namespace TransactionService.Domain.Services
+namespace TransactionService.Domain.Interfaces
 {
     public interface ITransactionValidator
     {

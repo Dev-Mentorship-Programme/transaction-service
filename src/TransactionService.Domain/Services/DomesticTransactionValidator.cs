@@ -1,5 +1,6 @@
 using System;
 using TransactionService.Domain.Entities;
+using TransactionService.Domain.Interfaces;
 
 namespace TransactionService.Domain.Services
 {
