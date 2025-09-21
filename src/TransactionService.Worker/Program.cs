@@ -1,20 +1,21 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using TransactionService.Worker;
 using TransactionService.Infrastructure.Extensions;
 using TransactionService.Infrastructure.Messaging;
 using TransactionService.Domain.Interfaces;
-using TransactionService.Infrastructure.Data;
+
+var executablePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+var executableDirectory = Path.GetDirectoryName(executablePath) ?? Directory.GetCurrentDirectory();
 
 var host = Host.CreateDefaultBuilder(args)
+    .UseContentRoot(executableDirectory)
     .ConfigureServices((context, services) =>
     {
         services.AddInfrastructure(context.Configuration);
-        services.AddHostedService<CreateTransactionEventConsumerWorker>();
-        services.AddScoped<ICreateTransactionEventConsumer, CreateTransactionEventConsumer>();
-        services.AddDbContext<AppDbContext>(options => options.UseNpgsql(context.Configuration.GetConnectionString("DefaultConnection")));
+        services.AddHostedService<TransactionEventConsumerWorker>();
+        services.AddScoped<ITransactionEventConsumer, TransactionEventConsumer>();
+        services.AddMetrics();
     })
     .Build();
 

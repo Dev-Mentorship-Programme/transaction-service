@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TransactionService.Domain.Entities;
+using TransactionService.Domain.Interfaces;
 
 namespace TransactionService.Domain.Events
 {
-    public class CreateTransactionEvent
+    public class CreateTransactionEvent : ITransactionEvent
     {
+        public string EventType { get; set; } = "CreateTransaction";
         public Guid AccountId { get; set; }
 
         public Guid DestinationAccountId { get; set; }

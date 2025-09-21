@@ -52,5 +52,11 @@ namespace TransactionService.Infrastructure.Repositories
             return await _context.Transactions
                 .AnyAsync(t => t.Id == id, cancellationToken);
         }
+
+        public async Task<Transaction?> GetPendingAsync(Guid accountId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Transactions
+                .FirstOrDefaultAsync(t => t.AccountId == accountId && t.Status == TransactionStatus.PENDING, cancellationToken);
+        }
     }
 }

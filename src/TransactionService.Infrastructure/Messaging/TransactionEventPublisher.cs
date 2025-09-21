@@ -19,7 +19,7 @@ namespace TransactionService.Infrastructure.Messaging
         private bool _disposed = false;
 
         // Initialize connection and channel - call this method during startup
-        public async Task InitializeAsync()
+        public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {
             var factory = new ConnectionFactory
             {
@@ -30,8 +30,8 @@ namespace TransactionService.Infrastructure.Messaging
             };
 
             // Create connection and channel from factory, not from null references
-            _connection = await factory.CreateConnectionAsync();
-            _channel = await _connection.CreateChannelAsync();
+            _connection = await factory.CreateConnectionAsync(cancellationToken);
+            _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             await _channel.QueueDeclareAsync(
                 queue: _settings.QueueName,
@@ -41,7 +41,7 @@ namespace TransactionService.Infrastructure.Messaging
                 arguments: null);
         }
 
-        public async Task PublishAsync(TransactionCreatedEvent @event)
+        public async Task PublishAsync(TransactionCreatedEvent @event, CancellationToken cancellationToken = default)
         {
             if (_disposed)
             {
@@ -58,12 +58,14 @@ namespace TransactionService.Infrastructure.Messaging
             {
                 var message = JsonSerializer.Serialize(@event);
                 var body = Encoding.UTF8.GetBytes(message);
+                // Use a different queue for outbound events
+                var outboundQueue = "transaction-created";
 
                 // Use the correct BasicPublishAsync overload for RabbitMQ.Client 7.x
                 await _channel.BasicPublishAsync(
                     exchange: "",
-                    routingKey: _settings.QueueName,
-                    body: body);
+                    routingKey: outboundQueue,
+                    body: body, cancellationToken);
             }
             catch (Exception ex)
             {

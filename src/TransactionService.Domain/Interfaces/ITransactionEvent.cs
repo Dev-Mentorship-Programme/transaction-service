@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 
 namespace TransactionService.Domain.Interfaces
 {
-    public interface ITransactionEventConsumer : IAsyncDisposable
+    public interface ITransactionEvent
     {
-        Task StartConsumingAsync(CancellationToken cancellationToken);
+        string EventType { get; }
+        Guid AccountId { get; }
     }
 }

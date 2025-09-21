@@ -1,19 +1,22 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using MediatR;
 using TransactionService.Domain.Interfaces;
 using TransactionService.Application.Events;
 
 namespace TransactionService.Application.Handlers
 {
-    public class TransactionCreatedHandler(ITransactionEventPublisher publisher) : INotificationHandler<TransactionCreatedNotification>
+    public class TransactionCreatedHandler(
+        ITransactionEventPublisherFactory publisherFactory,
+        ILogger<TransactionCreatedHandler> logger) : INotificationHandler<TransactionCreatedNotification>
+{
+    private readonly ITransactionEventPublisherFactory _publisherFactory = publisherFactory;
+    private readonly ILogger<TransactionCreatedHandler> _logger = logger;
+
+    public async Task Handle(TransactionCreatedNotification notification, CancellationToken cancellationToken)
     {
-        private readonly ITransactionEventPublisher _publisher = publisher;
-        public async Task Handle(TransactionCreatedNotification notification, CancellationToken cancellationToken)
-        {
-            await _publisher.PublishAsync(notification.Event);
-        }
+        var publisher = await _publisherFactory.CreateAsync();
+        _logger.LogInformation("Publishing TransactionCreatedNotification, {Event}", notification.Event.TransactionId);
+        await publisher.PublishAsync(notification.Event, cancellationToken);
     }
+}
 }
