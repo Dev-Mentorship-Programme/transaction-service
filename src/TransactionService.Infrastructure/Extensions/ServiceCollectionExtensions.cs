@@ -12,43 +12,50 @@ using TransactionService.Domain.Factories;
 using TransactionService.Domain.Events;
 using TransactionService.Application.Commands;
 using TransactionService.Application.Events;
+using TransactionService.Infrastructure.Interfaces;
+using TransactionService.Infrastructure.Services;
 
 namespace TransactionService.Infrastructure.Extensions
 {
     public static class ServiceCollectionExtensions
     {
         public static IServiceCollection AddInfrastructure(
-            this IServiceCollection services, 
-            IConfiguration configuration)
+        this IServiceCollection services, 
+        IConfiguration configuration)
+    {
+        // Add DbContext here
+        services.AddDbContext<AppDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+
+        // Register interface -> implementation
+        services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
+
+        // Configure RabbitMQ settings using Action<T> overload
+        services.Configure<RabbitMqSettings>(options =>
         {
-            // Add DbContext here
-            services.AddDbContext<AppDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            var section = configuration.GetSection("RabbitMq");
+            section.Bind(options);
+        });
 
-            // Register interface -> implementation
-            services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
+        services.AddMediatR(typeof(CreateTransactionCommand).Assembly);
+        services.AddMediatR(typeof(TransactionCreatedNotification).Assembly);
 
-            // Configure RabbitMQ settings using Action<T> overload
-            services.Configure<RabbitMqSettings>(options =>
-            {
-                var section = configuration.GetSection("RabbitMq");
-                section.Bind(options);
-            });
+        // Register messaging services
+        services.AddScoped<ITransactionEventPublisherFactory, TransactionEventPublisherFactory>();
+        services.AddScoped<ITransactionEventConsumer, TransactionEventConsumer>();
+        services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<IEventHandler<CreateTransactionEvent>, CreateTransactionEventHandler>();
+        services.AddTransient<ITransactionFactory, TransactionFactory>();
 
-            services.AddMediatR(typeof(CreateTransactionCommand).Assembly);
-            services.AddMediatR(typeof(TransactionCreatedNotification).Assembly);
+        // Register receipt services
+        services.AddScoped<ICloudinaryService, CloudinaryService>();
+        services.AddScoped<IReceiptGeneratorService, ReceiptGeneratorService>();
+        services.AddScoped<IReceiptService, ReceiptService>();
 
-            // Register messaging services
-            services.AddScoped<ITransactionEventPublisherFactory, TransactionEventPublisherFactory>();
-            services.AddScoped<ITransactionEventConsumer, TransactionEventConsumer>();
-            services.AddScoped<ITransactionRepository, TransactionRepository>();
-            services.AddScoped<IEventHandler<CreateTransactionEvent>, CreateTransactionEventHandler>();
-            services.AddTransient<ITransactionFactory, TransactionFactory>();
+        // Add health checks
+        services.AddHealthChecks().AddCheck<RabbitMqHealthCheck>("rabbitmq");
+        services.AddHealthChecks().AddCheck<TransactionEventConsumer>("transaction-consumer");
 
-            // Add health checks
-            services.AddHealthChecks().AddCheck<RabbitMqHealthCheck>("rabbitmq");
-            services.AddHealthChecks().AddCheck<TransactionEventConsumer>("transaction-consumer");
-
-            return services;
+        return services;
         }
     }
 }
