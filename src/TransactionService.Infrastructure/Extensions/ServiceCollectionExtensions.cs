@@ -43,6 +43,8 @@ namespace TransactionService.Infrastructure.Extensions
         services.AddScoped<ITransactionEventPublisherFactory, TransactionEventPublisherFactory>();
         services.AddScoped<ITransactionEventConsumer, TransactionEventConsumer>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<ISignedLinkRepository, SignedLinkRepository>();
+        services.AddScoped<IReceiptDocumentRepository, ReceiptDocumentRepository>();
         services.AddScoped<IEventHandler<CreateTransactionEvent>, CreateTransactionEventHandler>();
         services.AddTransient<ITransactionFactory, TransactionFactory>();
 
