@@ -19,16 +19,77 @@ namespace TransactionService.Api.Controllers
             return res == null ? NotFound() : Ok(res);
         }
 
-        [HttpPost("/{id}/receipt/share")]
-        public async Task<IActionResult> CreateShareableReceipt([FromRoute] Guid id, [FromBody] CreateShareRequest req)
+        [HttpGet("/{id}/receipt")]
+        public async Task<IActionResult> GetTransactionReceipt(
+            [FromRoute] Guid id, 
+            [FromQuery] string requestedBy,
+            [FromQuery] int expirationHours = 24)
         {
-            var cmd = new CreateShareableLinkCommand(id, req.ExpiresInSeconds);
-            var link = await _mediator.Send(cmd);
-            return Ok(new { link });
+            if (string.IsNullOrWhiteSpace(requestedBy))
+            {
+                return BadRequest(new { error = "requestedBy parameter is required" });
+            }
+
+            if (expirationHours <= 0 || expirationHours > 168)
+            {
+                return BadRequest(new { error = "expirationHours must be between 1 and 168 hours" });
+            }
+
+            try
+            {
+                var query = new GetTransactionReceiptQuery(id, requestedBy, expirationHours);
+                var result = await _mediator.Send(query);
+                
+                if (result == null)
+                {
+                    return NotFound(new { error = $"Transaction {id} not found" });
+                }
+
+                return Ok(new ReceiptResponse(
+                    result.TransactionId,
+                    result.ShareableUrl,
+                    result.ExpiresAt,
+                    result.DocumentUrl
+                ));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "An error occurred while generating the receipt" });
+            }
+        }
+
+        [HttpGet("/receipt/validate")]
+        public async Task<IActionResult> ValidateReceiptLink([FromQuery] string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return BadRequest(new { error = "url parameter is required" });
+            }
+
+            try
+            {
+                var query = new ValidateReceiptLinkQuery(url);
+                var isValid = await _mediator.Send(query);
+                
+                return Ok(new { isValid, url });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "An error occurred while validating the link" });
+            }
         }
     }
 
 }
 
 
-public record CreateShareRequest(int ExpiresInSeconds);
+public record ReceiptResponse(
+    Guid TransactionId,
+    string ShareableUrl,
+    DateTime ExpiresAt,
+    string? DocumentUrl = null
+);
