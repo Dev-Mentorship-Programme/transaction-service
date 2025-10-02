@@ -49,7 +49,6 @@ ScaffoldingReadMe.txt
 # Entity Framework
 *.edmx.*
 *.dbmdl
-[Mm]igrations/
 
 # DotCover
 *.dotCover
