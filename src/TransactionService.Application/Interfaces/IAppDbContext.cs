@@ -9,6 +9,8 @@ namespace TransactionService.Application.Interfaces
     public interface IAppDbContext
     {
         IQueryable<Transaction> Transactions { get; }
+        IQueryable<SignedLink> SignedLinks { get; }
+        IQueryable<ReceiptDocument> ReceiptDocuments { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     }

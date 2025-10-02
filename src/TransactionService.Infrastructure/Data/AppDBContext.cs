@@ -9,8 +9,12 @@ namespace TransactionService.Infrastructure.Data
     public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options), IAppDbContext
     {
         public DbSet<Transaction> Transactions { get; set; } = null!;
+        public DbSet<SignedLink> SignedLinks { get; set; } = null!;
+        public DbSet<ReceiptDocument> ReceiptDocuments { get; set; } = null!;
         
         IQueryable<Transaction> IAppDbContext.Transactions => Transactions;
+        IQueryable<SignedLink> IAppDbContext.SignedLinks => SignedLinks;
+        IQueryable<ReceiptDocument> IAppDbContext.ReceiptDocuments => ReceiptDocuments;
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
             => base.SaveChangesAsync(cancellationToken);
@@ -91,6 +95,74 @@ namespace TransactionService.Infrastructure.Data
 
                 entity.HasIndex(e => e.Type)
                     .HasDatabaseName("IX_Transactions_Type");
+            });
+
+            modelBuilder.Entity<SignedLink>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id)
+                    .ValueGeneratedNever();
+
+                entity.Property(e => e.TransactionId)
+                    .IsRequired();
+
+                entity.Property(e => e.ResourceType)
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(e => e.ShareableUrl)
+                    .HasMaxLength(500)
+                    .IsRequired();
+
+                entity.Property(e => e.ExpiresAt)
+                    .IsRequired();
+
+                entity.Property(e => e.CreatedAt)
+                    .IsRequired()
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.Property(e => e.IsActive)
+                    .IsRequired()
+                    .HasDefaultValue(true);
+
+                // Indexes
+                entity.HasIndex(e => e.TransactionId)
+                    .HasDatabaseName("IX_SignedLinks_TransactionId");
+
+                entity.HasIndex(e => e.ExpiresAt)
+                    .HasDatabaseName("IX_SignedLinks_ExpiresAt");
+
+                entity.HasIndex(e => e.ShareableUrl)
+                    .HasDatabaseName("IX_SignedLinks_ShareableUrl")
+                    .IsUnique();
+            });
+
+            modelBuilder.Entity<ReceiptDocument>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id)
+                    .ValueGeneratedNever();
+
+                entity.Property(e => e.TransactionId)
+                    .IsRequired();
+
+                entity.Property(e => e.DocumentUrl)
+                    .HasMaxLength(500)
+                    .IsRequired();
+
+                entity.Property(e => e.CloudinaryPublicId)
+                    .HasMaxLength(200)
+                    .IsRequired();
+
+                entity.Property(e => e.CreatedAt)
+                    .IsRequired()
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                // Indexes
+                entity.HasIndex(e => e.TransactionId)
+                    .HasDatabaseName("IX_ReceiptDocuments_TransactionId");
             });
         }
     }
