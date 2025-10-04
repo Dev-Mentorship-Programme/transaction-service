@@ -1,5 +1,4 @@
 using System;
-using FluentAssertions;
 using TransactionService.Application.Queries;
 using Xunit;
 
@@ -19,9 +18,12 @@ namespace TransactionService.Application.Tests.Queries
             var query = new GetTransactionReceiptQuery(transactionId, requestedBy, expirationHours);
 
             // Assert
-            query.TransactionId.Should().Be(transactionId);
-            query.RequestedBy.Should().Be(requestedBy);
-            query.ExpirationHours.Should().Be(expirationHours);
+            Assert.Multiple(() =>
+            {
+                Assert.Equal(transactionId, query.TransactionId);
+                Assert.Equal(requestedBy, query.RequestedBy);
+                Assert.Equal(expirationHours, query.ExpirationHours);
+            });
         }
 
         [Fact]
@@ -35,7 +37,7 @@ namespace TransactionService.Application.Tests.Queries
             var query = new GetTransactionReceiptQuery(transactionId, requestedBy);
 
             // Assert
-            query.ExpirationHours.Should().Be(24);
+            Assert.Equal(24, query.ExpirationHours);
         }
 
         [Fact]
@@ -51,8 +53,11 @@ namespace TransactionService.Application.Tests.Queries
             var query2 = new GetTransactionReceiptQuery(transactionId, requestedBy, expirationHours);
 
             // Assert
-            query1.Should().Be(query2);
-            query1.GetHashCode().Should().Be(query2.GetHashCode());
+            Assert.Multiple(() =>
+            {
+                Assert.Equal(query1, query2);
+                Assert.Equal(query1.GetHashCode(), query2.GetHashCode());
+            });
         }
     }
 }

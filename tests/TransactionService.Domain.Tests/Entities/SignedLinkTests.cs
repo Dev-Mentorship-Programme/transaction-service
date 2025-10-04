@@ -1,5 +1,4 @@
 using System;
-using FluentAssertions;
 using TransactionService.Domain.Entities;
 using Xunit;
 
@@ -19,13 +18,16 @@ namespace TransactionService.Domain.Tests.Entities
             var signedLink = new SignedLink(transactionId, shareableUrl, expiresAt);
 
             // Assert
-            signedLink.Id.Should().NotBeEmpty();
-            signedLink.TransactionId.Should().Be(transactionId);
-            signedLink.ShareableUrl.Should().Be(shareableUrl);
-            signedLink.ExpiresAt.Should().Be(expiresAt);
-            signedLink.ResourceType.Should().Be("Receipt");
-            signedLink.IsActive.Should().BeTrue();
-            signedLink.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+            Assert.Multiple(() =>
+            {
+                Assert.NotEqual(Guid.Empty, signedLink.Id);
+                Assert.Equal(transactionId, signedLink.TransactionId);
+                Assert.Equal(shareableUrl, signedLink.ShareableUrl);
+                Assert.Equal(expiresAt, signedLink.ExpiresAt);
+                Assert.Equal("Receipt", signedLink.ResourceType);
+                Assert.True(signedLink.IsActive);
+                Assert.True(Math.Abs((signedLink.CreatedAt - DateTime.UtcNow).TotalSeconds) < 1);
+            });
         }
 
         [Fact]
@@ -36,9 +38,9 @@ namespace TransactionService.Domain.Tests.Entities
             var expiresAt = DateTime.UtcNow.AddHours(24);
 
             // Act & Assert
-            var action = () => new SignedLink(Guid.Empty, shareableUrl, expiresAt);
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("TransactionId cannot be empty*");
+            var exception = Assert.Throws<ArgumentException>(
+                () => new SignedLink(Guid.Empty, shareableUrl, expiresAt));
+            Assert.StartsWith("TransactionId cannot be empty", exception.Message);
         }
 
         [Theory]
@@ -52,9 +54,9 @@ namespace TransactionService.Domain.Tests.Entities
             var expiresAt = DateTime.UtcNow.AddHours(24);
 
             // Act & Assert
-            var action = () => new SignedLink(transactionId, shareableUrl, expiresAt);
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("ShareableUrl cannot be empty*");
+            var exception = Assert.Throws<ArgumentException>(
+                () => new SignedLink(transactionId, shareableUrl, expiresAt));
+            Assert.StartsWith("ShareableUrl cannot be empty", exception.Message);
         }
 
         [Fact]
@@ -66,9 +68,9 @@ namespace TransactionService.Domain.Tests.Entities
             var expiresAt = DateTime.UtcNow.AddHours(-1);
 
             // Act & Assert
-            var action = () => new SignedLink(transactionId, shareableUrl, expiresAt);
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("ExpiresAt must be in the future*");
+            var exception = Assert.Throws<ArgumentException>(
+                () => new SignedLink(transactionId, shareableUrl, expiresAt));
+            Assert.StartsWith("ExpiresAt must be in the future", exception.Message);
         }
 
         [Fact]
@@ -81,7 +83,7 @@ namespace TransactionService.Domain.Tests.Entities
             var signedLink = new SignedLink(transactionId, shareableUrl, expiresAt);
 
             // Act & Assert
-            signedLink.IsExpired.Should().BeFalse();
+            Assert.False(signedLink.IsExpired);
         }
 
         [Fact]
@@ -97,7 +99,7 @@ namespace TransactionService.Domain.Tests.Entities
             System.Threading.Thread.Sleep(10); // Wait for expiration
             
             // Assert
-            signedLink.IsExpired.Should().BeTrue();
+            Assert.True(signedLink.IsExpired);
         }
 
         [Fact]
@@ -113,7 +115,7 @@ namespace TransactionService.Domain.Tests.Entities
             signedLink.Deactivate();
 
             // Assert
-            signedLink.IsActive.Should().BeFalse();
+            Assert.False(signedLink.IsActive);
         }
 
         [Fact]
@@ -126,7 +128,7 @@ namespace TransactionService.Domain.Tests.Entities
             var signedLink = new SignedLink(transactionId, shareableUrl, expiresAt);
 
             // Act & Assert
-            signedLink.IsValid.Should().BeTrue();
+            Assert.True(signedLink.IsValid);
         }
 
         [Fact]
@@ -142,7 +144,7 @@ namespace TransactionService.Domain.Tests.Entities
             signedLink.Deactivate();
 
             // Assert
-            signedLink.IsValid.Should().BeFalse();
+            Assert.False(signedLink.IsValid);
         }
     }
 }

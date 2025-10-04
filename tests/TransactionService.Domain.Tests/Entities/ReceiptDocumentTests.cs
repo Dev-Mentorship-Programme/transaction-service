@@ -1,5 +1,4 @@
 using System;
-using FluentAssertions;
 using TransactionService.Domain.Entities;
 using Xunit;
 
@@ -19,11 +18,14 @@ namespace TransactionService.Domain.Tests.Entities
             var receiptDocument = new ReceiptDocument(transactionId, documentUrl, cloudinaryPublicId);
 
             // Assert
-            receiptDocument.Id.Should().NotBeEmpty();
-            receiptDocument.TransactionId.Should().Be(transactionId);
-            receiptDocument.DocumentUrl.Should().Be(documentUrl);
-            receiptDocument.CloudinaryPublicId.Should().Be(cloudinaryPublicId);
-            receiptDocument.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+            Assert.Multiple(() =>
+            {
+                Assert.NotEqual(Guid.Empty, receiptDocument.Id);
+                Assert.Equal(transactionId, receiptDocument.TransactionId);
+                Assert.Equal(documentUrl, receiptDocument.DocumentUrl);
+                Assert.Equal(cloudinaryPublicId, receiptDocument.CloudinaryPublicId);
+                Assert.True(Math.Abs((receiptDocument.CreatedAt - DateTime.UtcNow).TotalSeconds) < 1);
+            });
         }
 
         [Fact]
@@ -33,11 +35,14 @@ namespace TransactionService.Domain.Tests.Entities
             var receiptDocument = new ReceiptDocument();
 
             // Assert
-            receiptDocument.Id.Should().NotBeEmpty();
-            receiptDocument.TransactionId.Should().BeEmpty();
-            receiptDocument.DocumentUrl.Should().Be(string.Empty);
-            receiptDocument.CloudinaryPublicId.Should().Be(string.Empty);
-            receiptDocument.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+            Assert.Multiple(() =>
+            {
+                Assert.NotEqual(Guid.Empty, receiptDocument.Id);
+                Assert.Equal(Guid.Empty, receiptDocument.TransactionId);
+                Assert.Equal(string.Empty, receiptDocument.DocumentUrl);
+                Assert.Equal(string.Empty, receiptDocument.CloudinaryPublicId);
+                Assert.True(Math.Abs((receiptDocument.CreatedAt - DateTime.UtcNow).TotalSeconds) < 1);
+            });
         }
 
         [Fact]
@@ -48,9 +53,9 @@ namespace TransactionService.Domain.Tests.Entities
             var cloudinaryPublicId = "receipts/receipt123";
 
             // Act & Assert
-            var action = () => new ReceiptDocument(Guid.Empty, documentUrl, cloudinaryPublicId);
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("TransactionId cannot be empty*");
+            var exception = Assert.Throws<ArgumentException>(
+                () => new ReceiptDocument(Guid.Empty, documentUrl, cloudinaryPublicId));
+            Assert.StartsWith("TransactionId cannot be empty", exception.Message);
         }
 
         [Theory]
@@ -64,9 +69,9 @@ namespace TransactionService.Domain.Tests.Entities
             var cloudinaryPublicId = "receipts/receipt123";
 
             // Act & Assert
-            var action = () => new ReceiptDocument(transactionId, documentUrl, cloudinaryPublicId);
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("DocumentUrl cannot be empty*");
+            var exception = Assert.Throws<ArgumentException>(
+                () => new ReceiptDocument(transactionId, documentUrl, cloudinaryPublicId));
+            Assert.StartsWith("DocumentUrl cannot be empty", exception.Message);
         }
 
         [Theory]
@@ -80,9 +85,9 @@ namespace TransactionService.Domain.Tests.Entities
             var documentUrl = "https://res.cloudinary.com/demo/receipt123.pdf";
 
             // Act & Assert
-            var action = () => new ReceiptDocument(transactionId, documentUrl, cloudinaryPublicId);
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("CloudinaryPublicId cannot be empty*");
+            var exception = Assert.Throws<ArgumentException>(
+                () => new ReceiptDocument(transactionId, documentUrl, cloudinaryPublicId));
+            Assert.StartsWith("CloudinaryPublicId cannot be empty", exception.Message);
         }
 
         [Fact]
@@ -97,8 +102,11 @@ namespace TransactionService.Domain.Tests.Entities
             var receiptDocument = new ReceiptDocument(transactionId, documentUrl, cloudinaryPublicId);
 
             // Assert
-            receiptDocument.DocumentUrl.Should().Be(documentUrl);
-            receiptDocument.CloudinaryPublicId.Should().Be(cloudinaryPublicId);
+            Assert.Multiple(() =>
+            {
+                Assert.Equal(documentUrl, receiptDocument.DocumentUrl);
+                Assert.Equal(cloudinaryPublicId, receiptDocument.CloudinaryPublicId);
+            });
         }
     }
 }

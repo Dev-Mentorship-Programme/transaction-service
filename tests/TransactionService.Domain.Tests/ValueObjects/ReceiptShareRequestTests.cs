@@ -1,5 +1,4 @@
 using System;
-using FluentAssertions;
 using TransactionService.Domain.ValueObjects;
 using Xunit;
 
@@ -19,9 +18,12 @@ namespace TransactionService.Domain.Tests.ValueObjects
             var request = new ReceiptShareRequest(transactionId, expirationHours, requestedBy);
 
             // Assert
-            request.TransactionId.Should().Be(transactionId);
-            request.ExpirationHours.Should().Be(expirationHours);
-            request.RequestedBy.Should().Be(requestedBy);
+            Assert.Multiple(() =>
+            {
+                Assert.Equal(transactionId, request.TransactionId);
+                Assert.Equal(expirationHours, request.ExpirationHours);
+                Assert.Equal(requestedBy, request.RequestedBy);
+            });
         }
 
         [Fact]
@@ -32,9 +34,9 @@ namespace TransactionService.Domain.Tests.ValueObjects
             var requestedBy = "user@example.com";
 
             // Act & Assert
-            var action = () => new ReceiptShareRequest(Guid.Empty, expirationHours, requestedBy);
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("TransactionId cannot be empty*");
+            var exception = Assert.Throws<ArgumentException>(
+                () => new ReceiptShareRequest(Guid.Empty, expirationHours, requestedBy));
+            Assert.StartsWith("TransactionId cannot be empty", exception.Message);
         }
 
         [Theory]
@@ -48,9 +50,9 @@ namespace TransactionService.Domain.Tests.ValueObjects
             var requestedBy = "user@example.com";
 
             // Act & Assert
-            var action = () => new ReceiptShareRequest(transactionId, expirationHours, requestedBy);
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("ExpirationHours must be between 1 and 168 hours*");
+            var exception = Assert.Throws<ArgumentException>(
+                () => new ReceiptShareRequest(transactionId, expirationHours, requestedBy));
+            Assert.StartsWith("ExpirationHours must be between 1 and 168 hours", exception.Message);
         }
 
         [Theory]
@@ -64,9 +66,9 @@ namespace TransactionService.Domain.Tests.ValueObjects
             var expirationHours = 24;
 
             // Act & Assert
-            var action = () => new ReceiptShareRequest(transactionId, expirationHours, requestedBy);
-            action.Should().Throw<ArgumentException>()
-                .WithMessage("RequestedBy cannot be empty*");
+            var exception = Assert.Throws<ArgumentException>(
+                () => new ReceiptShareRequest(transactionId, expirationHours, requestedBy));
+            Assert.StartsWith("RequestedBy cannot be empty", exception.Message);
         }
 
         [Theory]
@@ -83,7 +85,9 @@ namespace TransactionService.Domain.Tests.ValueObjects
             var action = () => new ReceiptShareRequest(transactionId, expirationHours, requestedBy);
 
             // Assert
-            action.Should().NotThrow();
+            // No exception should be thrown - test passes if we reach this point
+            var request = new ReceiptShareRequest(transactionId, expirationHours, requestedBy);
+            Assert.NotNull(request);
         }
 
         [Fact]
@@ -100,7 +104,7 @@ namespace TransactionService.Domain.Tests.ValueObjects
             var actualExpiration = request.CalculateExpirationDate();
 
             // Assert
-            actualExpiration.Should().BeCloseTo(expectedExpiration, TimeSpan.FromSeconds(1));
+            Assert.True(Math.Abs((actualExpiration - expectedExpiration).TotalSeconds) < 1);
         }
 
         [Fact]
@@ -116,8 +120,11 @@ namespace TransactionService.Domain.Tests.ValueObjects
             var request2 = new ReceiptShareRequest(transactionId, expirationHours, requestedBy);
 
             // Assert
-            request1.Should().Be(request2);
-            request1.GetHashCode().Should().Be(request2.GetHashCode());
+            Assert.Multiple(() =>
+            {
+                Assert.Equal(request1, request2);
+                Assert.Equal(request1.GetHashCode(), request2.GetHashCode());
+            });
         }
 
         [Fact]
@@ -134,7 +141,7 @@ namespace TransactionService.Domain.Tests.ValueObjects
             var request2 = new ReceiptShareRequest(transactionId2, expirationHours, requestedBy);
 
             // Assert
-            request1.Should().NotBe(request2);
+            Assert.NotEqual(request1, request2);
         }
     }
 }

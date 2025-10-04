@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using TransactionService.Domain.Entities;
 using TransactionService.Infrastructure.Data;
@@ -25,14 +24,14 @@ namespace TransactionService.Infrastructure.Tests.Data
         public void DbContext_ShouldHaveSignedLinksDbSet()
         {
             // Assert
-            _context.SignedLinks.Should().NotBeNull();
+            Assert.NotNull(_context.SignedLinks);
         }
 
         [Fact]
         public void DbContext_ShouldHaveReceiptDocumentsDbSet()
         {
             // Assert
-            _context.ReceiptDocuments.Should().NotBeNull();
+            Assert.NotNull(_context.ReceiptDocuments);
         }
 
         [Fact]
@@ -50,9 +49,12 @@ namespace TransactionService.Infrastructure.Tests.Data
 
             // Assert
             var retrievedLink = _context.SignedLinks.First();
-            retrievedLink.TransactionId.Should().Be(transactionId);
-            retrievedLink.ShareableUrl.Should().Be(shareableUrl);
-            retrievedLink.ExpiresAt.Should().BeCloseTo(expiresAt, TimeSpan.FromMilliseconds(1));
+            Assert.Multiple(() =>
+            {
+                Assert.Equal(transactionId, retrievedLink.TransactionId);
+                Assert.Equal(shareableUrl, retrievedLink.ShareableUrl);
+                Assert.True(Math.Abs((retrievedLink.ExpiresAt - expiresAt).TotalMilliseconds) < 1);
+            });
         }
 
         [Fact]
@@ -70,9 +72,12 @@ namespace TransactionService.Infrastructure.Tests.Data
 
             // Assert
             var retrievedDocument = _context.ReceiptDocuments.First();
-            retrievedDocument.TransactionId.Should().Be(transactionId);
-            retrievedDocument.DocumentUrl.Should().Be(documentUrl);
-            retrievedDocument.CloudinaryPublicId.Should().Be(cloudinaryPublicId);
+            Assert.Multiple(() =>
+            {
+                Assert.Equal(transactionId, retrievedDocument.TransactionId);
+                Assert.Equal(documentUrl, retrievedDocument.DocumentUrl);
+                Assert.Equal(cloudinaryPublicId, retrievedDocument.CloudinaryPublicId);
+            });
         }
 
         [Fact]
@@ -84,8 +89,11 @@ namespace TransactionService.Infrastructure.Tests.Data
                 .FirstOrDefault(i => i.Properties.Any(p => p.Name == nameof(SignedLink.ShareableUrl)));
 
             // Assert
-            shareableUrlIndex.Should().NotBeNull();
-            shareableUrlIndex!.IsUnique.Should().BeTrue();
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(shareableUrlIndex);
+                Assert.True(shareableUrlIndex.IsUnique);
+            });
         }
 
         [Fact]
@@ -113,11 +121,13 @@ namespace TransactionService.Infrastructure.Tests.Data
                 .ToList();
 
             // Assert
-            signedLinksForTransaction.Should().HaveCount(1);
-            signedLinksForTransaction.First().TransactionId.Should().Be(targetTransactionId);
-
-            receiptDocumentsForTransaction.Should().HaveCount(1);
-            receiptDocumentsForTransaction.First().TransactionId.Should().Be(targetTransactionId);
+            Assert.Multiple(() =>
+            {
+                Assert.Single(signedLinksForTransaction);
+                Assert.Equal(targetTransactionId, signedLinksForTransaction.First().TransactionId);
+                Assert.Single(receiptDocumentsForTransaction);
+                Assert.Equal(targetTransactionId, receiptDocumentsForTransaction.First().TransactionId);
+            });
         }
 
         public void Dispose()

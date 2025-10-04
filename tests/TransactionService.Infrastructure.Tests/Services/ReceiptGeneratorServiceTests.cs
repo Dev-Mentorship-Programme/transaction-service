@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using TransactionService.Domain.Entities;
@@ -46,9 +45,12 @@ namespace TransactionService.Infrastructure.Tests.Services
             using var result = await _service.GenerateReceiptPdfAsync(transaction);
 
             // Assert
-            result.Should().NotBeNull();
-            result.CanRead.Should().BeTrue();
-            result.Length.Should().BeGreaterThan(0);
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.True(result.CanRead);
+                Assert.True(result.Length > 0);
+            });
         }
 
         [Fact]
@@ -76,9 +78,12 @@ namespace TransactionService.Infrastructure.Tests.Services
             using var result = await _service.GenerateReceiptPdfAsync(transaction);
 
             // Assert
-            result.Should().NotBeNull();
-            result.CanRead.Should().BeTrue();
-            result.Length.Should().BeGreaterThan(0);
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.True(result.CanRead);
+                Assert.True(result.Length > 0);
+            });
         }
 
         [Fact]
@@ -122,10 +127,13 @@ namespace TransactionService.Infrastructure.Tests.Services
             using var resultUSD = await _service.GenerateReceiptPdfAsync(transactionUSD);
 
             // Assert
-            resultNGN.Should().NotBeNull();
-            resultUSD.Should().NotBeNull();
-            resultNGN.Length.Should().BeGreaterThan(0);
-            resultUSD.Length.Should().BeGreaterThan(0);
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(resultNGN);
+                Assert.NotNull(resultUSD);
+                Assert.True(resultNGN.Length > 0);
+                Assert.True(resultUSD.Length > 0);
+            });
         }
 
         [Fact]
@@ -153,8 +161,11 @@ namespace TransactionService.Infrastructure.Tests.Services
             using var result = await _service.GenerateReceiptPdfAsync(transaction);
 
             // Assert
-            result.Should().NotBeNull();
-            result.Length.Should().BeGreaterThan(0);
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.True(result.Length > 0);
+            });
         }
     }
 }

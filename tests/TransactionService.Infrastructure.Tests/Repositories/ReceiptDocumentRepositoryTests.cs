@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using TransactionService.Domain.Entities;
 using TransactionService.Infrastructure.Data;
@@ -39,9 +38,12 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.GetByIdAsync(receiptDocument.Id);
 
             // Assert
-            result.Should().NotBeNull();
-            result!.Id.Should().Be(receiptDocument.Id);
-            result.TransactionId.Should().Be(transactionId);
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.Equal(receiptDocument.Id, result.Id);
+                Assert.Equal(transactionId, result.TransactionId);
+            });
         }
 
         [Fact]
@@ -58,9 +60,12 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.GetByTransactionIdAsync(transactionId);
 
             // Assert
-            result.Should().NotBeNull();
-            result!.TransactionId.Should().Be(transactionId);
-            result.DocumentUrl.Should().Be("https://cloudinary.com/receipt.pdf");
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.Equal(transactionId, result.TransactionId);
+                Assert.Equal("https://cloudinary.com/receipt.pdf", result.DocumentUrl);
+            });
         }
 
         [Fact]
@@ -73,7 +78,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.GetByTransactionIdAsync(nonExistentTransactionId);
 
             // Assert
-            result.Should().BeNull();
+            Assert.Null(result);
         }
 
         [Fact]
@@ -91,8 +96,12 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.GetAllAsync();
 
             // Assert
-            result.Should().HaveCount(3);
-            result.Should().BeInDescendingOrder(rd => rd.CreatedAt);
+            Assert.Multiple(() =>
+            {
+                Assert.Equal(3, result.Count());
+                var orderedResult = result.OrderByDescending(rd => rd.CreatedAt).ToList();
+                Assert.Equal(orderedResult, result.ToList());
+            });
         }
 
         [Fact]
@@ -106,12 +115,15 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.AddAsync(receiptDocument);
 
             // Assert
-            result.Should().Be(receiptDocument);
+            Assert.Equal(receiptDocument, result);
             
             var saved = await _context.ReceiptDocuments.FindAsync(receiptDocument.Id);
-            saved.Should().NotBeNull();
-            saved!.TransactionId.Should().Be(transactionId);
-            saved.DocumentUrl.Should().Be("https://cloudinary.com/new-receipt.pdf");
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(saved);
+                Assert.Equal(transactionId, saved.TransactionId);
+                Assert.Equal("https://cloudinary.com/new-receipt.pdf", saved.DocumentUrl);
+            });
         }
 
         [Fact]
@@ -132,8 +144,11 @@ namespace TransactionService.Infrastructure.Tests.Repositories
 
             // Assert
             var updated = await _context.ReceiptDocuments.FindAsync(receiptDocument.Id);
-            updated.Should().NotBeNull();
-            updated!.DocumentUrl.Should().Be("https://cloudinary.com/updated-receipt.pdf");
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(updated);
+                Assert.Equal("https://cloudinary.com/updated-receipt.pdf", updated.DocumentUrl);
+            });
         }
 
         [Fact]
@@ -149,7 +164,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
 
             // Assert
             var deleted = await _context.ReceiptDocuments.FindAsync(receiptDocument.Id);
-            deleted.Should().BeNull();
+            Assert.Null(deleted);
         }
 
         [Fact]
@@ -159,8 +174,8 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var nonExistentId = Guid.NewGuid();
 
             // Act & Assert
-            var action = async () => await _repository.DeleteAsync(nonExistentId);
-            await action.Should().NotThrowAsync();
+            // Should not throw - if we get here without exception, test passes
+            await _repository.DeleteAsync(nonExistentId);
         }
 
         [Fact]
@@ -175,7 +190,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.ExistsAsync(receiptDocument.Id);
 
             // Assert
-            result.Should().BeTrue();
+            Assert.True(result);
         }
 
         [Fact]
@@ -188,7 +203,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.ExistsAsync(nonExistentId);
 
             // Assert
-            result.Should().BeFalse();
+            Assert.False(result);
         }
 
         [Fact]
@@ -204,7 +219,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.ExistsByTransactionIdAsync(transactionId);
 
             // Assert
-            result.Should().BeTrue();
+            Assert.True(result);
         }
 
         [Fact]
@@ -217,7 +232,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.ExistsByTransactionIdAsync(nonExistentTransactionId);
 
             // Assert
-            result.Should().BeFalse();
+            Assert.False(result);
         }
 
         public void Dispose()

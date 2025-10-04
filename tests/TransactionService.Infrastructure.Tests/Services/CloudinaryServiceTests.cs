@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -41,10 +40,15 @@ namespace TransactionService.Infrastructure.Tests.Services
             var result = await _service.UploadDocumentAsync(stream, fileName, folder);
 
             // Assert
-            result.DocumentUrl.Should().NotBeNullOrEmpty();
-            result.PublicId.Should().NotBeNullOrEmpty();
-            result.DocumentUrl.Should().Contain("test-cloud");
-            result.PublicId.Should().StartWith($"{folder}/receipt_");
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result.DocumentUrl);
+                Assert.NotEmpty(result.DocumentUrl);
+                Assert.NotNull(result.PublicId);
+                Assert.NotEmpty(result.PublicId);
+                Assert.Contains("test-cloud", result.DocumentUrl);
+                Assert.StartsWith($"{folder}/receipt_", result.PublicId);
+            });
         }
 
         [Fact]
@@ -58,9 +62,13 @@ namespace TransactionService.Infrastructure.Tests.Services
             var result = await _service.GenerateSecureUrlAsync(publicId, expirationHours);
 
             // Assert
-            result.Should().NotBeNullOrEmpty();
-            result.Should().Contain("test-cloud");
-            result.Should().Contain("s--");
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.NotEmpty(result);
+                Assert.Contains("test-cloud", result);
+                Assert.Contains("s--", result);
+            });
         }
 
         [Fact]
@@ -73,7 +81,7 @@ namespace TransactionService.Infrastructure.Tests.Services
             var result = await _service.DeleteDocumentAsync(publicId);
 
             // Assert
-            result.Should().BeTrue();
+            Assert.True(result);
         }
 
         [Fact]
@@ -88,7 +96,7 @@ namespace TransactionService.Infrastructure.Tests.Services
             var result = await _service.UploadDocumentAsync(stream, fileName, folder);
 
             // Assert
-            result.PublicId.Should().StartWith($"{folder}/receipt_");
+            Assert.StartsWith($"{folder}/receipt_", result.PublicId);
         }
 
         [Fact]
@@ -102,7 +110,11 @@ namespace TransactionService.Infrastructure.Tests.Services
             var result = await _service.GenerateSecureUrlAsync(publicId, expirationHours);
 
             // Assert
-            result.Should().NotBeNullOrEmpty();
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.NotEmpty(result);
+            });
         }
     }
 }

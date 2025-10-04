@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using TransactionService.Application.Interfaces;
@@ -63,10 +62,13 @@ namespace TransactionService.Infrastructure.Tests.Services
             var result = await _service.GenerateReceiptAsync(transactionId);
 
             // Assert
-            result.Should().NotBeNull();
-            result.TransactionId.Should().Be(transactionId);
-            result.DocumentUrl.Should().Be(documentUrl);
-            result.CloudinaryPublicId.Should().Be(publicId);
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.Equal(transactionId, result.TransactionId);
+                Assert.Equal(documentUrl, result.DocumentUrl);
+                Assert.Equal(publicId, result.CloudinaryPublicId);
+            });
         }
 
         [Fact]
@@ -79,9 +81,9 @@ namespace TransactionService.Infrastructure.Tests.Services
                 .Returns(new Transaction[0].AsQueryable());
 
             // Act & Assert
-            var action = async () => await _service.GenerateReceiptAsync(transactionId);
-            await action.Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage($"Transaction {transactionId} not found");
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () => await _service.GenerateReceiptAsync(transactionId));
+            Assert.Equal($"Transaction {transactionId} not found", exception.Message);
         }
 
         [Fact]
@@ -102,7 +104,7 @@ namespace TransactionService.Infrastructure.Tests.Services
             var result = await _service.GenerateReceiptAsync(transactionId);
 
             // Assert
-            result.Should().Be(existingDocument);
+            Assert.Equal(existingDocument, result);
             _mockReceiptGenerator.Verify(g => g.GenerateReceiptPdfAsync(It.IsAny<Transaction>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -129,11 +131,14 @@ namespace TransactionService.Infrastructure.Tests.Services
             var result = await _service.GetShareableLinkAsync(request);
 
             // Assert
-            result.Should().NotBeNull();
-            result.TransactionId.Should().Be(transactionId);
-            result.ShareableUrl.Should().Be(secureUrl);
-            result.ResourceType.Should().Be("Receipt");
-            result.ExpiresAt.Should().BeCloseTo(DateTime.UtcNow.AddHours(24), TimeSpan.FromMinutes(1));
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.Equal(transactionId, result.TransactionId);
+                Assert.Equal(secureUrl, result.ShareableUrl);
+                Assert.Equal("Receipt", result.ResourceType);
+                Assert.True(Math.Abs((result.ExpiresAt - DateTime.UtcNow.AddHours(24)).TotalMinutes) < 1);
+            });
         }
 
         [Fact]
@@ -150,7 +155,7 @@ namespace TransactionService.Infrastructure.Tests.Services
             var result = await _service.ValidateLinkAsync(shareableUrl);
 
             // Assert
-            result.Should().BeTrue();
+            Assert.True(result);
         }
 
         [Fact]
@@ -166,7 +171,7 @@ namespace TransactionService.Infrastructure.Tests.Services
             var result = await _service.ValidateLinkAsync(shareableUrl);
 
             // Assert
-            result.Should().BeFalse();
+            Assert.False(result);
         }
 
         [Fact]
@@ -190,7 +195,7 @@ namespace TransactionService.Infrastructure.Tests.Services
             var result = await _service.ValidateLinkAsync(shareableUrl);
 
             // Assert
-            result.Should().BeFalse();
+            Assert.False(result);
         }
 
         [Fact]
@@ -208,7 +213,7 @@ namespace TransactionService.Infrastructure.Tests.Services
             var result = await _service.ValidateLinkAsync(shareableUrl);
 
             // Assert
-            result.Should().BeFalse();
+            Assert.False(result);
         }
     }
 }

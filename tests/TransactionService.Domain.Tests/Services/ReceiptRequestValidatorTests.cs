@@ -1,4 +1,4 @@
-using FluentAssertions;
+using TransactionService.Domain.Interfaces;
 using TransactionService.Domain.Services;
 using TransactionService.Domain.ValueObjects;
 using Xunit;
@@ -25,8 +25,11 @@ namespace TransactionService.Domain.Tests.Services
             var result = _validator.Validate(requestedBy, expirationHours);
 
             // Assert
-            result.IsValid.Should().BeTrue();
-            result.Errors.Should().BeEmpty();
+            Assert.Multiple(() =>
+            {
+                Assert.True(result.IsValid);
+                Assert.Empty(result.Errors);
+            });
         }
 
         [Theory]
@@ -42,8 +45,11 @@ namespace TransactionService.Domain.Tests.Services
             var result = _validator.Validate(requestedBy, expirationHours);
 
             // Assert
-            result.IsValid.Should().BeFalse();
-            result.Errors.Should().Contain("requestedBy parameter is required");
+            Assert.Multiple(() =>
+            {
+                Assert.False(result.IsValid);
+                Assert.Contains("requestedBy parameter is required", result.Errors);
+            });
         }
 
         [Theory]
@@ -59,8 +65,11 @@ namespace TransactionService.Domain.Tests.Services
             var result = _validator.Validate(requestedBy, expirationHours);
 
             // Assert
-            result.IsValid.Should().BeFalse();
-            result.Errors.Should().Contain("expirationHours must be between 1 and 168 hours");
+            Assert.Multiple(() =>
+            {
+                Assert.False(result.IsValid);
+                Assert.Contains("expirationHours must be between 1 and 168 hours", result.Errors);
+            });
         }
 
         [Theory]
@@ -76,8 +85,11 @@ namespace TransactionService.Domain.Tests.Services
             var result = _validator.Validate(requestedBy, expirationHours);
 
             // Assert
-            result.IsValid.Should().BeFalse();
-            result.Errors.Should().Contain("expirationHours must be between 1 and 168 hours");
+            Assert.Multiple(() =>
+            {
+                Assert.False(result.IsValid);
+                Assert.Contains("expirationHours must be between 1 and 168 hours", result.Errors);
+            });
         }
 
         [Theory]
@@ -94,8 +106,11 @@ namespace TransactionService.Domain.Tests.Services
             var result = _validator.Validate(requestedBy, expirationHours);
 
             // Assert
-            result.IsValid.Should().BeTrue();
-            result.Errors.Should().BeEmpty();
+            Assert.Multiple(() =>
+            {
+                Assert.True(result.IsValid);
+                Assert.Empty(result.Errors);
+            });
         }
 
         [Fact]
@@ -109,10 +124,13 @@ namespace TransactionService.Domain.Tests.Services
             var result = _validator.Validate(requestedBy, expirationHours);
 
             // Assert
-            result.IsValid.Should().BeFalse();
-            result.Errors.Should().HaveCount(2);
-            result.Errors.Should().Contain("requestedBy parameter is required");
-            result.Errors.Should().Contain("expirationHours must be between 1 and 168 hours");
+            Assert.Multiple(() =>
+            {
+                Assert.False(result.IsValid);
+                Assert.Equal(2, result.Errors.Count);
+                Assert.Contains("requestedBy parameter is required", result.Errors);
+                Assert.Contains("expirationHours must be between 1 and 168 hours", result.Errors);
+            });
         }
 
         [Fact]
@@ -125,8 +143,11 @@ namespace TransactionService.Domain.Tests.Services
             validationResult.AddError("Test error");
 
             // Assert
-            validationResult.IsValid.Should().BeFalse();
-            validationResult.Errors.Should().Contain("Test error");
+            Assert.Multiple(() =>
+            {
+                Assert.False(validationResult.IsValid);
+                Assert.Contains("Test error", validationResult.Errors);
+            });
         }
 
         [Fact]
@@ -136,8 +157,11 @@ namespace TransactionService.Domain.Tests.Services
             var validationResult = new ValidationResult();
 
             // Assert
-            validationResult.IsValid.Should().BeTrue();
-            validationResult.Errors.Should().BeEmpty();
+            Assert.Multiple(() =>
+            {
+                Assert.True(validationResult.IsValid);
+                Assert.Empty(validationResult.Errors);
+            });
         }
     }
 }

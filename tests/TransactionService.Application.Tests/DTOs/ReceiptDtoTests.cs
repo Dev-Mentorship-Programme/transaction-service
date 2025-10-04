@@ -1,5 +1,4 @@
 using System;
-using FluentAssertions;
 using TransactionService.Application.DTOs;
 using Xunit;
 
@@ -20,10 +19,13 @@ namespace TransactionService.Application.Tests.DTOs
             var dto = new ReceiptDto(transactionId, shareableUrl, expiresAt, documentUrl);
 
             // Assert
-            dto.TransactionId.Should().Be(transactionId);
-            dto.ShareableUrl.Should().Be(shareableUrl);
-            dto.ExpiresAt.Should().Be(expiresAt);
-            dto.DocumentUrl.Should().Be(documentUrl);
+            Assert.Multiple(() =>
+            {
+                Assert.Equal(transactionId, dto.TransactionId);
+                Assert.Equal(shareableUrl, dto.ShareableUrl);
+                Assert.Equal(expiresAt, dto.ExpiresAt);
+                Assert.Equal(documentUrl, dto.DocumentUrl);
+            });
         }
 
         [Fact]
@@ -38,10 +40,13 @@ namespace TransactionService.Application.Tests.DTOs
             var dto = new ReceiptDto(transactionId, shareableUrl, expiresAt);
 
             // Assert
-            dto.TransactionId.Should().Be(transactionId);
-            dto.ShareableUrl.Should().Be(shareableUrl);
-            dto.ExpiresAt.Should().Be(expiresAt);
-            dto.DocumentUrl.Should().BeNull();
+            Assert.Multiple(() =>
+            {
+                Assert.Equal(transactionId, dto.TransactionId);
+                Assert.Equal(shareableUrl, dto.ShareableUrl);
+                Assert.Equal(expiresAt, dto.ExpiresAt);
+                Assert.Null(dto.DocumentUrl);
+            });
         }
 
         [Fact]
@@ -58,8 +63,11 @@ namespace TransactionService.Application.Tests.DTOs
             var dto2 = new ReceiptDto(transactionId, shareableUrl, expiresAt, documentUrl);
 
             // Assert
-            dto1.Should().Be(dto2);
-            dto1.GetHashCode().Should().Be(dto2.GetHashCode());
+            Assert.Multiple(() =>
+            {
+                Assert.Equal(dto1, dto2);
+                Assert.Equal(dto1.GetHashCode(), dto2.GetHashCode());
+            });
         }
 
         [Fact]
@@ -76,7 +84,7 @@ namespace TransactionService.Application.Tests.DTOs
             var dto2 = new ReceiptDto(transactionId2, shareableUrl, expiresAt);
 
             // Assert
-            dto1.Should().NotBe(dto2);
+            Assert.NotEqual(dto1, dto2);
         }
     }
 }

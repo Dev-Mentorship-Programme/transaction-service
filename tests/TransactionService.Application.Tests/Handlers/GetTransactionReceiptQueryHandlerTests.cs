@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using TransactionService.Application.DTOs;
@@ -42,7 +41,7 @@ namespace TransactionService.Application.Tests.Handlers
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            result.Should().BeNull();
+            Assert.Null(result);
         }
 
         [Fact]
@@ -69,11 +68,14 @@ namespace TransactionService.Application.Tests.Handlers
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result!.TransactionId.Should().Be(transactionId);
-            result.ShareableUrl.Should().Be(existingLink.ShareableUrl);
-            result.ExpiresAt.Should().Be(existingLink.ExpiresAt);
-            result.DocumentUrl.Should().Be(receiptDocument.DocumentUrl);
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.Equal(transactionId, result.TransactionId);
+                Assert.Equal(existingLink.ShareableUrl, result.ShareableUrl);
+                Assert.Equal(existingLink.ExpiresAt, result.ExpiresAt);
+                Assert.Equal(receiptDocument.DocumentUrl, result.DocumentUrl);
+            });
         }
 
         [Fact]
@@ -102,10 +104,13 @@ namespace TransactionService.Application.Tests.Handlers
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result!.TransactionId.Should().Be(transactionId);
-            result.ShareableUrl.Should().Be(newLink.ShareableUrl);
-            result.ExpiresAt.Should().Be(newLink.ExpiresAt);
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.Equal(transactionId, result.TransactionId);
+                Assert.Equal(newLink.ShareableUrl, result.ShareableUrl);
+                Assert.Equal(newLink.ExpiresAt, result.ExpiresAt);
+            });
 
             _mockReceiptService.Verify(s => s.GetShareableLinkAsync(
                 It.Is<ReceiptShareRequest>(r => 
@@ -152,8 +157,11 @@ namespace TransactionService.Application.Tests.Handlers
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            result.Should().NotBeNull();
-            result!.ShareableUrl.Should().Be(newLink.ShareableUrl);
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.Equal(newLink.ShareableUrl, result.ShareableUrl);
+            });
             _mockReceiptService.Verify(s => s.GetShareableLinkAsync(It.IsAny<ReceiptShareRequest>(), It.IsAny<CancellationToken>()), Times.Once);
         }
     }

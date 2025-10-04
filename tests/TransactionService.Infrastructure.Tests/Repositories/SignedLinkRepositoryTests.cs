@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using TransactionService.Domain.Entities;
 using TransactionService.Infrastructure.Data;
@@ -39,9 +38,12 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.GetByIdAsync(signedLink.Id);
 
             // Assert
-            result.Should().NotBeNull();
-            result!.Id.Should().Be(signedLink.Id);
-            result.TransactionId.Should().Be(transactionId);
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.Equal(signedLink.Id, result.Id);
+                Assert.Equal(transactionId, result.TransactionId);
+            });
         }
 
         [Fact]
@@ -58,8 +60,11 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.GetByUrlAsync(shareableUrl);
 
             // Assert
-            result.Should().NotBeNull();
-            result!.ShareableUrl.Should().Be(shareableUrl);
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.Equal(shareableUrl, result.ShareableUrl);
+            });
         }
 
         [Fact]
@@ -80,8 +85,11 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.GetByTransactionIdAsync(transactionId);
 
             // Assert
-            result.Should().HaveCount(2);
-            result.All(sl => sl.TransactionId == transactionId).Should().BeTrue();
+            Assert.Multiple(() =>
+            {
+                Assert.Equal(2, result.Count());
+                Assert.True(result.All(sl => sl.TransactionId == transactionId));
+            });
         }
 
         [Fact]
@@ -106,9 +114,12 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.GetActiveByTransactionIdAsync(transactionId);
 
             // Assert
-            result.Should().NotBeNull();
-            result!.Id.Should().Be(activeLink.Id);
-            result.IsValid.Should().BeTrue();
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(result);
+                Assert.Equal(activeLink.Id, result.Id);
+                Assert.True(result.IsValid);
+            });
         }
 
         [Fact]
@@ -122,11 +133,14 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.AddAsync(signedLink);
 
             // Assert
-            result.Should().Be(signedLink);
+            Assert.Equal(signedLink, result);
             
             var saved = await _context.SignedLinks.FindAsync(signedLink.Id);
-            saved.Should().NotBeNull();
-            saved!.TransactionId.Should().Be(transactionId);
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(saved);
+                Assert.Equal(transactionId, saved.TransactionId);
+            });
         }
 
         [Fact]
@@ -143,8 +157,11 @@ namespace TransactionService.Infrastructure.Tests.Repositories
 
             // Assert
             var updated = await _context.SignedLinks.FindAsync(signedLink.Id);
-            updated.Should().NotBeNull();
-            updated!.IsActive.Should().BeFalse();
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(updated);
+                Assert.False(updated.IsActive);
+            });
         }
 
         [Fact]
@@ -159,7 +176,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.ExistsAsync(signedLink.Id);
 
             // Assert
-            result.Should().BeTrue();
+            Assert.True(result);
         }
 
         [Fact]
@@ -191,8 +208,11 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var result = await _repository.GetExpiredLinksAsync();
 
             // Assert
-            result.Should().HaveCount(1);
-            result.First().Id.Should().Be(expiredActiveLink.Id);
+            Assert.Multiple(() =>
+            {
+                Assert.Single(result);
+                Assert.Equal(expiredActiveLink.Id, result.First().Id);
+            });
         }
 
         [Fact]
@@ -216,8 +236,11 @@ namespace TransactionService.Infrastructure.Tests.Repositories
 
             // Assert
             var updated = await _context.SignedLinks.FindAsync(expiredActiveLink.Id);
-            updated.Should().NotBeNull();
-            updated!.IsActive.Should().BeFalse();
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(updated);
+                Assert.False(updated.IsActive);
+            });
         }
 
         public void Dispose()
