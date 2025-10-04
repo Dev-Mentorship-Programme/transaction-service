@@ -19,10 +19,13 @@ namespace TransactionService.Infrastructure.Services
         {
             _configuration = configuration;
             _logger = logger;
-            
-            _cloudName = _configuration["Cloudinary:CloudName"] ?? "drfy6rjlw";
-            _apiKey = _configuration["Cloudinary:ApiKey"] ?? "968343478423413";
-            _apiSecret = _configuration["Cloudinary:ApiSecret"] ?? "VXVgmx4InQK9kRC3VCsmSaNxb4k";
+
+            _cloudName = _configuration["Cloudinary:CloudName"]
+                ?? throw new ArgumentNullException(nameof(_cloudName), "Cloudinary:CloudName configuration is required.");
+            _apiKey = _configuration["Cloudinary:ApiKey"]
+                ?? throw new ArgumentNullException(nameof(_apiKey), "Cloudinary:ApiKey configuration is required.");
+            _apiSecret = _configuration["Cloudinary:ApiSecret"]
+                ?? throw new ArgumentNullException(nameof(_apiSecret), "Cloudinary:ApiSecret configuration is required.");
         }
 
         public async Task<(string DocumentUrl, string PublicId)> UploadDocumentAsync(

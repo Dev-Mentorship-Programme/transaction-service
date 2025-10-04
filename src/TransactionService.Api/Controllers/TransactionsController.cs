@@ -2,14 +2,16 @@ using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using TransactionService.Application.Commands;
 using TransactionService.Application.Queries;
+using TransactionService.Domain.Interfaces;
 
 namespace TransactionService.Api.Controllers
 {
     [ApiController]
     [Route("api/v1/transactions")]
-    public class TransactionsController(IMediator mediator) : ControllerBase
+    public class TransactionsController(IMediator mediator, IReceiptRequestValidator receiptRequestValidator) : ControllerBase
     {
         private readonly IMediator _mediator = mediator;
+        private readonly IReceiptRequestValidator _receiptRequestValidator = receiptRequestValidator;
 
         [HttpGet("/{id}")]
         public async Task<IActionResult> GetTransaction([FromRoute] Guid id)
@@ -25,14 +27,10 @@ namespace TransactionService.Api.Controllers
             [FromQuery] string requestedBy,
             [FromQuery] int expirationHours = 24)
         {
-            if (string.IsNullOrWhiteSpace(requestedBy))
+            var validationResult = _receiptRequestValidator.Validate(requestedBy, expirationHours);
+            if (!validationResult.IsValid)
             {
-                return BadRequest(new { error = "requestedBy parameter is required" });
-            }
-
-            if (expirationHours <= 0 || expirationHours > 168)
-            {
-                return BadRequest(new { error = "expirationHours must be between 1 and 168 hours" });
+                return BadRequest(new { errors = validationResult.Errors });
             }
 
             try

@@ -14,6 +14,7 @@ using TransactionService.Application.Commands;
 using TransactionService.Application.Events;
 using TransactionService.Infrastructure.Interfaces;
 using TransactionService.Infrastructure.Services;
+using TransactionService.Domain.Services;
 
 namespace TransactionService.Infrastructure.Extensions
 {
@@ -47,6 +48,9 @@ namespace TransactionService.Infrastructure.Extensions
         services.AddScoped<IReceiptDocumentRepository, ReceiptDocumentRepository>();
         services.AddScoped<IEventHandler<CreateTransactionEvent>, CreateTransactionEventHandler>();
         services.AddTransient<ITransactionFactory, TransactionFactory>();
+        
+        // Register validators
+        services.AddScoped<IReceiptRequestValidator, ReceiptRequestValidator>();
 
         // Register receipt services
         services.AddScoped<ICloudinaryService, CloudinaryService>();

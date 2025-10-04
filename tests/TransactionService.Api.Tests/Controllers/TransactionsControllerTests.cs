@@ -1,13 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using TransactionService.Api.Controllers;
 using TransactionService.Application.DTOs;
 using TransactionService.Application.Queries;
+using TransactionService.Domain.Interfaces;
+using TransactionService.Domain.ValueObjects;
 using Xunit;
 
 namespace TransactionService.Api.Tests.Controllers
@@ -15,12 +17,14 @@ namespace TransactionService.Api.Tests.Controllers
     public class TransactionsControllerTests
     {
         private readonly Mock<IMediator> _mockMediator;
+        private readonly Mock<IReceiptRequestValidator> _mockValidator;
         private readonly TransactionsController _controller;
 
         public TransactionsControllerTests()
         {
             _mockMediator = new Mock<IMediator>();
-            _controller = new TransactionsController(_mockMediator.Object);
+            _mockValidator = new Mock<IReceiptRequestValidator>();
+            _controller = new TransactionsController(_mockMediator.Object, _mockValidator.Object);
         }
 
         [Fact]
@@ -38,6 +42,9 @@ namespace TransactionService.Api.Tests.Controllers
                 "https://cloudinary.com/receipt.pdf"
             );
 
+            _mockValidator.Setup(v => v.Validate(requestedBy, expirationHours))
+                .Returns(new ValidationResult(true));
+
             _mockMediator.Setup(m => m.Send(It.IsAny<GetTransactionReceiptQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(receiptDto);
 
@@ -45,13 +52,16 @@ namespace TransactionService.Api.Tests.Controllers
             var result = await _controller.GetTransactionReceipt(transactionId, requestedBy, expirationHours);
 
             // Assert
-            result.Should().BeOfType<OkObjectResult>();
-            var okResult = result as OkObjectResult;
-            okResult!.Value.Should().BeOfType<ReceiptResponse>();
-            
-            var response = okResult.Value as ReceiptResponse;
-            response!.TransactionId.Should().Be(transactionId);
-            response.ShareableUrl.Should().Be("https://secure.cloudinary.com/receipt/123");
+            Assert.Multiple(() =>
+            {
+                Assert.IsType<OkObjectResult>(result);
+                var okResult = result as OkObjectResult;
+                Assert.IsType<ReceiptResponse>(okResult!.Value);
+                
+                var response = okResult.Value as ReceiptResponse;
+                Assert.Equal(transactionId, response!.TransactionId);
+                Assert.Equal("https://secure.cloudinary.com/receipt/123", response.ShareableUrl);
+            });
         }
 
         [Fact]
@@ -62,13 +72,22 @@ namespace TransactionService.Api.Tests.Controllers
             var requestedBy = "";
             var expirationHours = 24;
 
+            var validationResult = new ValidationResult(false);
+            validationResult.AddError("requestedBy parameter is required");
+            
+            _mockValidator.Setup(v => v.Validate(requestedBy, expirationHours))
+                .Returns(validationResult);
+
             // Act
             var result = await _controller.GetTransactionReceipt(transactionId, requestedBy, expirationHours);
 
             // Assert
-            result.Should().BeOfType<BadRequestObjectResult>();
-            var badRequestResult = result as BadRequestObjectResult;
-            badRequestResult!.Value.Should().BeEquivalentTo(new { error = "requestedBy parameter is required" });
+            Assert.Multiple(() =>
+            {
+                Assert.IsType<BadRequestObjectResult>(result);
+                var badRequestResult = result as BadRequestObjectResult;
+                Assert.Equivalent(new { errors = new List<string> { "requestedBy parameter is required" } }, badRequestResult!.Value);
+            });
         }
 
         [Theory]
@@ -81,13 +100,22 @@ namespace TransactionService.Api.Tests.Controllers
             var transactionId = Guid.NewGuid();
             var requestedBy = "user@example.com";
 
+            var validationResult = new ValidationResult(false);
+            validationResult.AddError("expirationHours must be between 1 and 168 (7 days)");
+            
+            _mockValidator.Setup(v => v.Validate(requestedBy, expirationHours))
+                .Returns(validationResult);
+
             // Act
             var result = await _controller.GetTransactionReceipt(transactionId, requestedBy, expirationHours);
 
             // Assert
-            result.Should().BeOfType<BadRequestObjectResult>();
-            var badRequestResult = result as BadRequestObjectResult;
-            badRequestResult!.Value.Should().BeEquivalentTo(new { error = "expirationHours must be between 1 and 168 hours" });
+            Assert.Multiple(() =>
+            {
+                Assert.IsType<BadRequestObjectResult>(result);
+                var badRequestResult = result as BadRequestObjectResult;
+                Assert.Equivalent(new { errors = new List<string> { "expirationHours must be between 1 and 168 (7 days)" } }, badRequestResult!.Value);
+            });
         }
 
         [Fact]
@@ -98,6 +126,9 @@ namespace TransactionService.Api.Tests.Controllers
             var requestedBy = "user@example.com";
             var expirationHours = 24;
 
+            _mockValidator.Setup(v => v.Validate(requestedBy, expirationHours))
+                .Returns(new ValidationResult(true));
+
             _mockMediator.Setup(m => m.Send(It.IsAny<GetTransactionReceiptQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ReceiptDto?)null);
 
@@ -105,9 +136,12 @@ namespace TransactionService.Api.Tests.Controllers
             var result = await _controller.GetTransactionReceipt(transactionId, requestedBy, expirationHours);
 
             // Assert
-            result.Should().BeOfType<NotFoundObjectResult>();
-            var notFoundResult = result as NotFoundObjectResult;
-            notFoundResult!.Value.Should().BeEquivalentTo(new { error = $"Transaction {transactionId} not found" });
+            Assert.Multiple(() =>
+            {
+                Assert.IsType<NotFoundObjectResult>(result);
+                var notFoundResult = result as NotFoundObjectResult;
+                Assert.Equivalent(new { error = $"Transaction {transactionId} not found" }, notFoundResult!.Value);
+            });
         }
 
         [Fact]
@@ -118,6 +152,9 @@ namespace TransactionService.Api.Tests.Controllers
             var requestedBy = "user@example.com";
             var expirationHours = 24;
 
+            _mockValidator.Setup(v => v.Validate(requestedBy, expirationHours))
+                .Returns(new ValidationResult(true));
+
             _mockMediator.Setup(m => m.Send(It.IsAny<GetTransactionReceiptQuery>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new ArgumentException("Invalid transaction ID"));
 
@@ -125,9 +162,12 @@ namespace TransactionService.Api.Tests.Controllers
             var result = await _controller.GetTransactionReceipt(transactionId, requestedBy, expirationHours);
 
             // Assert
-            result.Should().BeOfType<BadRequestObjectResult>();
-            var badRequestResult = result as BadRequestObjectResult;
-            badRequestResult!.Value.Should().BeEquivalentTo(new { error = "Invalid transaction ID" });
+            Assert.Multiple(() =>
+            {
+                Assert.IsType<BadRequestObjectResult>(result);
+                var badRequestResult = result as BadRequestObjectResult;
+                Assert.Equivalent(new { error = "Invalid transaction ID" }, badRequestResult!.Value);
+            });
         }
 
         [Fact]
@@ -138,6 +178,9 @@ namespace TransactionService.Api.Tests.Controllers
             var requestedBy = "user@example.com";
             var expirationHours = 24;
 
+            _mockValidator.Setup(v => v.Validate(requestedBy, expirationHours))
+                .Returns(new ValidationResult(true));
+
             _mockMediator.Setup(m => m.Send(It.IsAny<GetTransactionReceiptQuery>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Database connection failed"));
 
@@ -145,10 +188,13 @@ namespace TransactionService.Api.Tests.Controllers
             var result = await _controller.GetTransactionReceipt(transactionId, requestedBy, expirationHours);
 
             // Assert
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(500);
-            objectResult.Value.Should().BeEquivalentTo(new { error = "An error occurred while generating the receipt" });
+            Assert.Multiple(() =>
+            {
+                Assert.IsType<ObjectResult>(result);
+                var objectResult = result as ObjectResult;
+                Assert.Equal(500, objectResult!.StatusCode);
+                Assert.Equivalent(new { error = "An error occurred while generating the receipt" }, objectResult.Value);
+            });
         }
 
         [Fact]
@@ -164,9 +210,12 @@ namespace TransactionService.Api.Tests.Controllers
             var result = await _controller.ValidateReceiptLink(url);
 
             // Assert
-            result.Should().BeOfType<OkObjectResult>();
-            var okResult = result as OkObjectResult;
-            okResult!.Value.Should().BeEquivalentTo(new { isValid = true, url });
+            Assert.Multiple(() =>
+            {
+                Assert.IsType<OkObjectResult>(result);
+                var okResult = result as OkObjectResult;
+                Assert.Equivalent(new { isValid = true, url }, okResult!.Value);
+            });
         }
 
         [Fact]
@@ -182,9 +231,12 @@ namespace TransactionService.Api.Tests.Controllers
             var result = await _controller.ValidateReceiptLink(url);
 
             // Assert
-            result.Should().BeOfType<OkObjectResult>();
-            var okResult = result as OkObjectResult;
-            okResult!.Value.Should().BeEquivalentTo(new { isValid = false, url });
+            Assert.Multiple(() =>
+            {
+                Assert.IsType<OkObjectResult>(result);
+                var okResult = result as OkObjectResult;
+                Assert.Equivalent(new { isValid = false, url }, okResult!.Value);
+            });
         }
 
         [Theory]
@@ -197,9 +249,12 @@ namespace TransactionService.Api.Tests.Controllers
             var result = await _controller.ValidateReceiptLink(url);
 
             // Assert
-            result.Should().BeOfType<BadRequestObjectResult>();
-            var badRequestResult = result as BadRequestObjectResult;
-            badRequestResult!.Value.Should().BeEquivalentTo(new { error = "url parameter is required" });
+            Assert.Multiple(() =>
+            {
+                Assert.IsType<BadRequestObjectResult>(result);
+                var badRequestResult = result as BadRequestObjectResult;
+                Assert.Equivalent(new { error = "url parameter is required" }, badRequestResult!.Value);
+            });
         }
 
         [Fact]
@@ -215,10 +270,13 @@ namespace TransactionService.Api.Tests.Controllers
             var result = await _controller.ValidateReceiptLink(url);
 
             // Assert
-            result.Should().BeOfType<ObjectResult>();
-            var objectResult = result as ObjectResult;
-            objectResult!.StatusCode.Should().Be(500);
-            objectResult.Value.Should().BeEquivalentTo(new { error = "An error occurred while validating the link" });
+            Assert.Multiple(() =>
+            {
+                Assert.IsType<ObjectResult>(result);
+                var objectResult = result as ObjectResult;
+                Assert.Equal(500, objectResult!.StatusCode);
+                Assert.Equivalent(new { error = "An error occurred while validating the link" }, objectResult.Value);
+            });
         }
 
         [Fact]
@@ -228,6 +286,9 @@ namespace TransactionService.Api.Tests.Controllers
             var transactionId = Guid.NewGuid();
             var requestedBy = "user@example.com";
             var expirationHours = 48;
+            
+            _mockValidator.Setup(v => v.Validate(requestedBy, expirationHours))
+                .Returns(new ValidationResult(true));
             
             var receiptDto = new ReceiptDto(transactionId, "https://test.com", DateTime.UtcNow.AddHours(48));
 
