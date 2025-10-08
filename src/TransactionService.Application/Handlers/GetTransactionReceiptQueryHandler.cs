@@ -9,16 +9,22 @@ namespace TransactionService.Application.Handlers
 {
     public class GetTransactionReceiptQueryHandler : IRequestHandler<GetTransactionReceiptQuery, ReceiptDto?>
     {
-        private readonly IAppDbContext _context;
+        private readonly ITransactionRepository _transactionRepository;
+        private readonly ISignedLinkRepository _signedLinkRepository;
+        private readonly IReceiptDocumentRepository _receiptDocumentRepository;
         private readonly IReceiptService _receiptService;
         private readonly ILogger<GetTransactionReceiptQueryHandler> _logger;
 
         public GetTransactionReceiptQueryHandler(
-            IAppDbContext context,
+            ITransactionRepository transactionRepository,
+            ISignedLinkRepository signedLinkRepository,
+            IReceiptDocumentRepository receiptDocumentRepository,
             IReceiptService receiptService,
             ILogger<GetTransactionReceiptQueryHandler> logger)
         {
-            _context = context;
+            _transactionRepository = transactionRepository;
+            _signedLinkRepository = signedLinkRepository;
+            _receiptDocumentRepository = receiptDocumentRepository;
             _receiptService = receiptService;
             _logger = logger;
         }
@@ -29,8 +35,7 @@ namespace TransactionService.Application.Handlers
                 request.TransactionId, request.RequestedBy);
 
             // Validate transaction exists
-            var transaction = _context.Transactions
-                .FirstOrDefault(t => t.Id == request.TransactionId);
+            var transaction = await _transactionRepository.GetByIdAsync(request.TransactionId, cancellationToken);
 
             if (transaction == null)
             {
@@ -39,20 +44,18 @@ namespace TransactionService.Application.Handlers
             }
 
             // Check for existing valid receipt link
-            var existingLink = _context.SignedLinks
-                .Where(sl => sl.TransactionId == request.TransactionId && 
-                           sl.ResourceType == "Receipt" && 
-                           sl.IsActive && 
-                           sl.ExpiresAt > DateTime.UtcNow)
-                .OrderByDescending(sl => sl.CreatedAt)
-                .FirstOrDefault();
+            var existingLink = await _signedLinkRepository.GetActiveByTransactionIdAsync(
+                request.TransactionId, 
+                "Receipt", 
+                cancellationToken);
 
             if (existingLink != null)
             {
                 _logger.LogInformation("Found existing valid receipt link for transaction {TransactionId}", request.TransactionId);
                 
-                var existingDocument = _context.ReceiptDocuments
-                    .FirstOrDefault(rd => rd.TransactionId == request.TransactionId);
+                var existingDocument = await _receiptDocumentRepository.GetByTransactionIdAsync(
+                    request.TransactionId, 
+                    cancellationToken);
 
                 return new ReceiptDto(
                     request.TransactionId,
@@ -72,8 +75,9 @@ namespace TransactionService.Application.Handlers
 
                 var signedLink = await _receiptService.GetShareableLinkAsync(receiptRequest, cancellationToken);
                 
-                var receiptDocument = _context.ReceiptDocuments
-                    .FirstOrDefault(rd => rd.TransactionId == request.TransactionId);
+                var receiptDocument = await _receiptDocumentRepository.GetByTransactionIdAsync(
+                    request.TransactionId, 
+                    cancellationToken);
 
                 _logger.LogInformation("Generated new receipt link for transaction {TransactionId}", request.TransactionId);
 

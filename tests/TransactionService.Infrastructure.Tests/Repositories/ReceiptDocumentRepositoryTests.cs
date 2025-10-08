@@ -28,8 +28,8 @@ namespace TransactionService.Infrastructure.Tests.Repositories
         public async Task GetByIdAsync_WithValidId_ShouldReturnReceiptDocument()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
-            var receiptDocument = new ReceiptDocument(transactionId, "https://cloudinary.com/receipt.pdf", "receipt123");
+            var resourceId = Guid.NewGuid();
+            var receiptDocument = new ReceiptDocument(resourceId, "https://cloudinary.com/receipt.pdf", "receipt123");
             
             _context.ReceiptDocuments.Add(receiptDocument);
             await _context.SaveChangesAsync();
@@ -42,7 +42,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             {
                 Assert.NotNull(result);
                 Assert.Equal(receiptDocument.Id, result.Id);
-                Assert.Equal(transactionId, result.TransactionId);
+                Assert.Equal(resourceId, result.TransactionId);
             });
         }
 
@@ -50,20 +50,20 @@ namespace TransactionService.Infrastructure.Tests.Repositories
         public async Task GetByTransactionIdAsync_WithValidTransactionId_ShouldReturnReceiptDocument()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
-            var receiptDocument = new ReceiptDocument(transactionId, "https://cloudinary.com/receipt.pdf", "receipt123");
+            var resourceId = Guid.NewGuid();
+            var receiptDocument = new ReceiptDocument(resourceId, "https://cloudinary.com/receipt.pdf", "receipt123");
             
             _context.ReceiptDocuments.Add(receiptDocument);
             await _context.SaveChangesAsync();
 
             // Act
-            var result = await _repository.GetByTransactionIdAsync(transactionId);
+            var result = await _repository.GetByTransactionIdAsync(resourceId);
 
             // Assert
             Assert.Multiple(() =>
             {
                 Assert.NotNull(result);
-                Assert.Equal(transactionId, result.TransactionId);
+                Assert.Equal(resourceId, result.TransactionId);
                 Assert.Equal("https://cloudinary.com/receipt.pdf", result.DocumentUrl);
             });
         }
@@ -108,8 +108,8 @@ namespace TransactionService.Infrastructure.Tests.Repositories
         public async Task AddAsync_WithValidReceiptDocument_ShouldAddToDatabase()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
-            var receiptDocument = new ReceiptDocument(transactionId, "https://cloudinary.com/new-receipt.pdf", "new-receipt");
+            var resourceId = Guid.NewGuid();
+            var receiptDocument = new ReceiptDocument(resourceId, "https://cloudinary.com/new-receipt.pdf", "new-receipt");
 
             // Act
             var result = await _repository.AddAsync(receiptDocument);
@@ -121,7 +121,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             Assert.Multiple(() =>
             {
                 Assert.NotNull(saved);
-                Assert.Equal(transactionId, saved.TransactionId);
+                Assert.Equal(resourceId, saved.TransactionId);
                 Assert.Equal("https://cloudinary.com/new-receipt.pdf", saved.DocumentUrl);
             });
         }
@@ -210,13 +210,13 @@ namespace TransactionService.Infrastructure.Tests.Repositories
         public async Task ExistsByTransactionIdAsync_WithExistingTransactionId_ShouldReturnTrue()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
-            var receiptDocument = new ReceiptDocument(transactionId, "https://cloudinary.com/exists.pdf", "exists");
+            var resourceId = Guid.NewGuid();
+            var receiptDocument = new ReceiptDocument(resourceId, "https://cloudinary.com/exists.pdf", "exists");
             _context.ReceiptDocuments.Add(receiptDocument);
             await _context.SaveChangesAsync();
 
             // Act
-            var result = await _repository.ExistsByTransactionIdAsync(transactionId);
+            var result = await _repository.ExistsByTransactionIdAsync(resourceId);
 
             // Assert
             Assert.True(result);

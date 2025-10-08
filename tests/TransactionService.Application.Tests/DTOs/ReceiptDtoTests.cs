@@ -10,18 +10,18 @@ namespace TransactionService.Application.Tests.DTOs
         public void Constructor_WithAllParameters_ShouldCreateDto()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
+            var resourceId = Guid.NewGuid();
             var shareableUrl = "https://example.com/receipt/abc123";
             var expiresAt = DateTime.UtcNow.AddHours(24);
             var documentUrl = "https://cloudinary.com/receipt.pdf";
 
             // Act
-            var dto = new ReceiptDto(transactionId, shareableUrl, expiresAt, documentUrl);
+            var dto = new ReceiptDto(resourceId, shareableUrl, expiresAt, documentUrl);
 
             // Assert
             Assert.Multiple(() =>
             {
-                Assert.Equal(transactionId, dto.TransactionId);
+                Assert.Equal(resourceId, dto.TransactionId);
                 Assert.Equal(shareableUrl, dto.ShareableUrl);
                 Assert.Equal(expiresAt, dto.ExpiresAt);
                 Assert.Equal(documentUrl, dto.DocumentUrl);
@@ -32,17 +32,17 @@ namespace TransactionService.Application.Tests.DTOs
         public void Constructor_WithoutDocumentUrl_ShouldHaveNullDocumentUrl()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
+            var resourceId = Guid.NewGuid();
             var shareableUrl = "https://example.com/receipt/abc123";
             var expiresAt = DateTime.UtcNow.AddHours(24);
 
             // Act
-            var dto = new ReceiptDto(transactionId, shareableUrl, expiresAt);
+            var dto = new ReceiptDto(resourceId, shareableUrl, expiresAt);
 
             // Assert
             Assert.Multiple(() =>
             {
-                Assert.Equal(transactionId, dto.TransactionId);
+                Assert.Equal(resourceId, dto.TransactionId);
                 Assert.Equal(shareableUrl, dto.ShareableUrl);
                 Assert.Equal(expiresAt, dto.ExpiresAt);
                 Assert.Null(dto.DocumentUrl);
@@ -53,14 +53,14 @@ namespace TransactionService.Application.Tests.DTOs
         public void RecordEquality_WithSameValues_ShouldBeEqual()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
+            var resourceId = Guid.NewGuid();
             var shareableUrl = "https://example.com/receipt/abc123";
             var expiresAt = DateTime.UtcNow.AddHours(24);
             var documentUrl = "https://cloudinary.com/receipt.pdf";
 
             // Act
-            var dto1 = new ReceiptDto(transactionId, shareableUrl, expiresAt, documentUrl);
-            var dto2 = new ReceiptDto(transactionId, shareableUrl, expiresAt, documentUrl);
+            var dto1 = new ReceiptDto(resourceId, shareableUrl, expiresAt, documentUrl);
+            var dto2 = new ReceiptDto(resourceId, shareableUrl, expiresAt, documentUrl);
 
             // Assert
             Assert.Multiple(() =>

@@ -1,5 +1,6 @@
 using System;
-using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using TransactionService.Application.DTOs;
@@ -14,17 +15,26 @@ namespace TransactionService.Application.Tests.Handlers
 {
     public class GetTransactionReceiptQueryHandlerTests
     {
-        private readonly Mock<IAppDbContext> _mockContext;
+        private readonly Mock<ITransactionRepository> _mockTransactionRepository;
+        private readonly Mock<ISignedLinkRepository> _mockSignedLinkRepository;
+        private readonly Mock<IReceiptDocumentRepository> _mockReceiptDocumentRepository;
         private readonly Mock<IReceiptService> _mockReceiptService;
         private readonly Mock<ILogger<GetTransactionReceiptQueryHandler>> _mockLogger;
         private readonly GetTransactionReceiptQueryHandler _handler;
 
         public GetTransactionReceiptQueryHandlerTests()
         {
-            _mockContext = new Mock<IAppDbContext>();
+            _mockTransactionRepository = new Mock<ITransactionRepository>();
+            _mockSignedLinkRepository = new Mock<ISignedLinkRepository>();
+            _mockReceiptDocumentRepository = new Mock<IReceiptDocumentRepository>();
             _mockReceiptService = new Mock<IReceiptService>();
             _mockLogger = new Mock<ILogger<GetTransactionReceiptQueryHandler>>();
-            _handler = new GetTransactionReceiptQueryHandler(_mockContext.Object, _mockReceiptService.Object, _mockLogger.Object);
+            _handler = new GetTransactionReceiptQueryHandler(
+                _mockTransactionRepository.Object,
+                _mockSignedLinkRepository.Object,
+                _mockReceiptDocumentRepository.Object,
+                _mockReceiptService.Object,
+                _mockLogger.Object);
         }
 
         [Fact]
@@ -34,8 +44,8 @@ namespace TransactionService.Application.Tests.Handlers
             var transactionId = Guid.NewGuid();
             var query = new GetTransactionReceiptQuery(transactionId, "user@example.com");
 
-            _mockContext.Setup(c => c.Transactions)
-                .Returns(new List<Transaction>().AsQueryable());
+            _mockTransactionRepository.Setup(r => r.GetByIdAsync(transactionId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Transaction?)null);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -52,17 +62,17 @@ namespace TransactionService.Application.Tests.Handlers
             var query = new GetTransactionReceiptQuery(transactionId, "user@example.com");
             
             var transaction = new Transaction { Id = transactionId };
-            var existingLink = new SignedLink(transactionId, "https://example.com/receipt/123", DateTime.UtcNow.AddHours(24));
-            var receiptDocument = new ReceiptDocument(transactionId, "https://cloudinary.com/doc.pdf", "doc123");
+            var existingLink = new SignedLink(transactionId, "https://example.com/receipt/existing", DateTime.UtcNow.AddHours(24));
+            var receiptDocument = new ReceiptDocument(transactionId, "https://cloudinary.com/receipt.pdf", "receipt123");
 
-            _mockContext.Setup(c => c.Transactions)
-                .Returns(new List<Transaction> { transaction }.AsQueryable());
+            _mockTransactionRepository.Setup(r => r.GetByIdAsync(transactionId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(transaction);
 
-            _mockContext.Setup(c => c.SignedLinks)
-                .Returns(new List<SignedLink> { existingLink }.AsQueryable());
+            _mockSignedLinkRepository.Setup(r => r.GetActiveByTransactionIdAsync(transactionId, "Receipt", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(existingLink);
 
-            _mockContext.Setup(c => c.ReceiptDocuments)
-                .Returns(new List<ReceiptDocument> { receiptDocument }.AsQueryable());
+            _mockReceiptDocumentRepository.Setup(r => r.GetByTransactionIdAsync(transactionId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(receiptDocument);
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -88,14 +98,14 @@ namespace TransactionService.Application.Tests.Handlers
             var transaction = new Transaction { Id = transactionId };
             var newLink = new SignedLink(transactionId, "https://example.com/receipt/new", DateTime.UtcNow.AddHours(48));
 
-            _mockContext.Setup(c => c.Transactions)
-                .Returns(new List<Transaction> { transaction }.AsQueryable());
+            _mockTransactionRepository.Setup(r => r.GetByIdAsync(transactionId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(transaction);
 
-            _mockContext.Setup(c => c.SignedLinks)
-                .Returns(new List<SignedLink>().AsQueryable());
+            _mockSignedLinkRepository.Setup(r => r.GetActiveByTransactionIdAsync(transactionId, "Receipt", It.IsAny<CancellationToken>()))
+                .ReturnsAsync((SignedLink?)null);
 
-            _mockContext.Setup(c => c.ReceiptDocuments)
-                .Returns(new List<ReceiptDocument>().AsQueryable());
+            _mockReceiptDocumentRepository.Setup(r => r.GetByTransactionIdAsync(transactionId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ReceiptDocument?)null);
 
             _mockReceiptService.Setup(s => s.GetShareableLinkAsync(It.IsAny<ReceiptShareRequest>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(newLink);
@@ -121,34 +131,24 @@ namespace TransactionService.Application.Tests.Handlers
         }
 
         [Fact]
-        public async Task Handle_WithExpiredLink_ShouldGenerateNewReceipt()
+        public async Task Handle_WithInvalidExistingLink_ShouldGenerateNewReceipt()
         {
             // Arrange
             var transactionId = Guid.NewGuid();
             var query = new GetTransactionReceiptQuery(transactionId, "user@example.com");
             
             var transaction = new Transaction { Id = transactionId };
-            
-            // Create expired link using default constructor to bypass validation
-            var expiredLink = new SignedLink
-            {
-                TransactionId = transactionId,
-                ShareableUrl = "https://example.com/receipt/expired",
-                ExpiresAt = DateTime.UtcNow.AddHours(-1),
-                ResourceType = "Receipt",
-                IsActive = true
-            };
-            
             var newLink = new SignedLink(transactionId, "https://example.com/receipt/new", DateTime.UtcNow.AddHours(24));
 
-            _mockContext.Setup(c => c.Transactions)
-                .Returns(new List<Transaction> { transaction }.AsQueryable());
+            _mockTransactionRepository.Setup(r => r.GetByIdAsync(transactionId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(transaction);
 
-            _mockContext.Setup(c => c.SignedLinks)
-                .Returns(new List<SignedLink> { expiredLink }.AsQueryable());
+            // Repository will return null for expired/invalid links
+            _mockSignedLinkRepository.Setup(r => r.GetActiveByTransactionIdAsync(transactionId, "Receipt", It.IsAny<CancellationToken>()))
+                .ReturnsAsync((SignedLink?)null);
 
-            _mockContext.Setup(c => c.ReceiptDocuments)
-                .Returns(new List<ReceiptDocument>().AsQueryable());
+            _mockReceiptDocumentRepository.Setup(r => r.GetByTransactionIdAsync(transactionId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ReceiptDocument?)null);
 
             _mockReceiptService.Setup(s => s.GetShareableLinkAsync(It.IsAny<ReceiptShareRequest>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(newLink);

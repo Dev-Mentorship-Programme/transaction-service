@@ -10,17 +10,17 @@ namespace TransactionService.Domain.Tests.ValueObjects
         public void Constructor_WithValidParameters_ShouldCreateReceiptShareRequest()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
+            var resourceId = Guid.NewGuid();
             var expirationHours = 24;
             var requestedBy = "user@example.com";
 
             // Act
-            var request = new ReceiptShareRequest(transactionId, expirationHours, requestedBy);
+            var request = new ReceiptShareRequest(resourceId, expirationHours, requestedBy);
 
             // Assert
             Assert.Multiple(() =>
             {
-                Assert.Equal(transactionId, request.TransactionId);
+                Assert.Equal(resourceId, request.TransactionId);
                 Assert.Equal(expirationHours, request.ExpirationHours);
                 Assert.Equal(requestedBy, request.RequestedBy);
             });
@@ -46,12 +46,12 @@ namespace TransactionService.Domain.Tests.ValueObjects
         public void Constructor_WithInvalidExpirationHours_ShouldThrowArgumentException(int expirationHours)
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
+            var resourceId = Guid.NewGuid();
             var requestedBy = "user@example.com";
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(
-                () => new ReceiptShareRequest(transactionId, expirationHours, requestedBy));
+                () => new ReceiptShareRequest(resourceId, expirationHours, requestedBy));
             Assert.StartsWith("ExpirationHours must be between 1 and 168 hours", exception.Message);
         }
 
@@ -62,12 +62,12 @@ namespace TransactionService.Domain.Tests.ValueObjects
         public void Constructor_WithInvalidRequestedBy_ShouldThrowArgumentException(string requestedBy)
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
+            var resourceId = Guid.NewGuid();
             var expirationHours = 24;
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(
-                () => new ReceiptShareRequest(transactionId, expirationHours, requestedBy));
+                () => new ReceiptShareRequest(resourceId, expirationHours, requestedBy));
             Assert.StartsWith("RequestedBy cannot be empty", exception.Message);
         }
 
@@ -78,15 +78,15 @@ namespace TransactionService.Domain.Tests.ValueObjects
         public void Constructor_WithValidExpirationHours_ShouldNotThrow(int expirationHours)
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
+            var resourceId = Guid.NewGuid();
             var requestedBy = "user@example.com";
 
             // Act
-            var action = () => new ReceiptShareRequest(transactionId, expirationHours, requestedBy);
+            var action = () => new ReceiptShareRequest(resourceId, expirationHours, requestedBy);
 
             // Assert
             // No exception should be thrown - test passes if we reach this point
-            var request = new ReceiptShareRequest(transactionId, expirationHours, requestedBy);
+            var request = new ReceiptShareRequest(resourceId, expirationHours, requestedBy);
             Assert.NotNull(request);
         }
 
@@ -94,10 +94,10 @@ namespace TransactionService.Domain.Tests.ValueObjects
         public void CalculateExpirationDate_ShouldReturnCorrectDate()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
+            var resourceId = Guid.NewGuid();
             var expirationHours = 24;
             var requestedBy = "user@example.com";
-            var request = new ReceiptShareRequest(transactionId, expirationHours, requestedBy);
+            var request = new ReceiptShareRequest(resourceId, expirationHours, requestedBy);
             var expectedExpiration = DateTime.UtcNow.AddHours(expirationHours);
 
             // Act
@@ -111,13 +111,13 @@ namespace TransactionService.Domain.Tests.ValueObjects
         public void RecordEquality_WithSameValues_ShouldBeEqual()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
+            var resourceId = Guid.NewGuid();
             var expirationHours = 24;
             var requestedBy = "user@example.com";
 
             // Act
-            var request1 = new ReceiptShareRequest(transactionId, expirationHours, requestedBy);
-            var request2 = new ReceiptShareRequest(transactionId, expirationHours, requestedBy);
+            var request1 = new ReceiptShareRequest(resourceId, expirationHours, requestedBy);
+            var request2 = new ReceiptShareRequest(resourceId, expirationHours, requestedBy);
 
             // Assert
             Assert.Multiple(() =>

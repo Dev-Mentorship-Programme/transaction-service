@@ -34,7 +34,7 @@ namespace TransactionService.Infrastructure.Repositories
         public async Task<List<SignedLink>> GetByTransactionIdAsync(Guid transactionId, CancellationToken cancellationToken = default)
         {
             return await _context.SignedLinks
-                .Where(sl => sl.TransactionId == transactionId)
+                .Where(sl => sl.ResourceId == transactionId)
                 .OrderByDescending(sl => sl.CreatedAt)
                 .ToListAsync(cancellationToken);
         }
@@ -42,7 +42,7 @@ namespace TransactionService.Infrastructure.Repositories
         public async Task<SignedLink?> GetActiveByTransactionIdAsync(Guid transactionId, string resourceType = "Receipt", CancellationToken cancellationToken = default)
         {
             return await _context.SignedLinks
-                .Where(sl => sl.TransactionId == transactionId &&
+                .Where(sl => sl.ResourceId == transactionId &&
                            sl.ResourceType == resourceType &&
                            sl.IsActive &&
                            sl.ExpiresAt > DateTime.UtcNow)

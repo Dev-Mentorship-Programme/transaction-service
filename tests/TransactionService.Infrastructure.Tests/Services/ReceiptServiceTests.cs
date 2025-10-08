@@ -134,7 +134,7 @@ namespace TransactionService.Infrastructure.Tests.Services
             Assert.Multiple(() =>
             {
                 Assert.NotNull(result);
-                Assert.Equal(transactionId, result.TransactionId);
+                Assert.Equal(transactionId, result.ResourceId);
                 Assert.Equal(secureUrl, result.ShareableUrl);
                 Assert.Equal("Receipt", result.ResourceType);
                 Assert.True(Math.Abs((result.ExpiresAt - DateTime.UtcNow.AddHours(24)).TotalMinutes) < 1);
@@ -181,7 +181,7 @@ namespace TransactionService.Infrastructure.Tests.Services
             var shareableUrl = "https://example.com/receipt/expired";
             var expiredLink = new SignedLink
             {
-                TransactionId = Guid.NewGuid(),
+                ResourceId = Guid.NewGuid(),
                 ShareableUrl = shareableUrl,
                 ExpiresAt = DateTime.UtcNow.AddHours(-1), // Expired
                 ResourceType = "Receipt",

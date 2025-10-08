@@ -104,7 +104,7 @@ namespace TransactionService.Infrastructure.Data
                 entity.Property(e => e.Id)
                     .ValueGeneratedNever();
 
-                entity.Property(e => e.TransactionId)
+                entity.Property(e => e.ResourceId)
                     .IsRequired();
 
                 entity.Property(e => e.ResourceType)
@@ -127,7 +127,7 @@ namespace TransactionService.Infrastructure.Data
                     .HasDefaultValue(true);
 
                 // Indexes
-                entity.HasIndex(e => e.TransactionId)
+                entity.HasIndex(e => e.ResourceId)
                     .HasDatabaseName("IX_SignedLinks_TransactionId");
 
                 entity.HasIndex(e => e.ExpiresAt)

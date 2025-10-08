@@ -11,7 +11,7 @@ namespace TransactionService.Domain.Entities
         public Guid Id { get; set; }
 
         [Required]
-        public Guid TransactionId { get; set; }
+        public Guid ResourceId { get; set; }
 
         [Required]
         [MaxLength(50)]
@@ -36,11 +36,11 @@ namespace TransactionService.Domain.Entities
             CreatedAt = DateTime.UtcNow;
         }
 
-        public SignedLink(Guid transactionId, string shareableUrl, DateTime expiresAt, string resourceType = "Receipt")
+        public SignedLink(Guid resourceId, string shareableUrl, DateTime expiresAt, string resourceType = "Receipt")
             : this()
         {
-            if (transactionId == Guid.Empty)
-                throw new ArgumentException("TransactionId cannot be empty", nameof(transactionId));
+            if (resourceId == Guid.Empty)
+                throw new ArgumentException("ResourceId cannot be empty", nameof(resourceId));
 
             if (string.IsNullOrWhiteSpace(shareableUrl))
                 throw new ArgumentException("ShareableUrl cannot be empty", nameof(shareableUrl));
@@ -48,7 +48,7 @@ namespace TransactionService.Domain.Entities
             if (expiresAt <= DateTime.UtcNow)
                 throw new ArgumentException("ExpiresAt must be in the future", nameof(expiresAt));
 
-            TransactionId = transactionId;
+            ResourceId = resourceId;
             ShareableUrl = shareableUrl;
             ExpiresAt = expiresAt;
             ResourceType = resourceType;

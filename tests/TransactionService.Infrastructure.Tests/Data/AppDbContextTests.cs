@@ -38,10 +38,10 @@ namespace TransactionService.Infrastructure.Tests.Data
         public void SignedLink_ShouldBeAddedToDatabase()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
+            var resourceId = Guid.NewGuid();
             var shareableUrl = "https://example.com/receipt/abc123";
             var expiresAt = DateTime.UtcNow.AddHours(24);
-            var signedLink = new SignedLink(transactionId, shareableUrl, expiresAt);
+            var signedLink = new SignedLink(resourceId, shareableUrl, expiresAt);
 
             // Act
             _context.SignedLinks.Add(signedLink);
@@ -51,7 +51,7 @@ namespace TransactionService.Infrastructure.Tests.Data
             var retrievedLink = _context.SignedLinks.First();
             Assert.Multiple(() =>
             {
-                Assert.Equal(transactionId, retrievedLink.TransactionId);
+                Assert.Equal(resourceId, retrievedLink.ResourceId);
                 Assert.Equal(shareableUrl, retrievedLink.ShareableUrl);
                 Assert.True(Math.Abs((retrievedLink.ExpiresAt - expiresAt).TotalMilliseconds) < 1);
             });
@@ -61,10 +61,10 @@ namespace TransactionService.Infrastructure.Tests.Data
         public void ReceiptDocument_ShouldBeAddedToDatabase()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
+            var resourceId = Guid.NewGuid();
             var documentUrl = "https://res.cloudinary.com/demo/receipt123.pdf";
             var cloudinaryPublicId = "receipts/receipt123";
-            var receiptDocument = new ReceiptDocument(transactionId, documentUrl, cloudinaryPublicId);
+            var receiptDocument = new ReceiptDocument(resourceId, documentUrl, cloudinaryPublicId);
 
             // Act
             _context.ReceiptDocuments.Add(receiptDocument);
@@ -74,7 +74,7 @@ namespace TransactionService.Infrastructure.Tests.Data
             var retrievedDocument = _context.ReceiptDocuments.First();
             Assert.Multiple(() =>
             {
-                Assert.Equal(transactionId, retrievedDocument.TransactionId);
+                Assert.Equal(resourceId, retrievedDocument.TransactionId);
                 Assert.Equal(documentUrl, retrievedDocument.DocumentUrl);
                 Assert.Equal(cloudinaryPublicId, retrievedDocument.CloudinaryPublicId);
             });
@@ -113,7 +113,7 @@ namespace TransactionService.Infrastructure.Tests.Data
 
             // Act
             var signedLinksForTransaction = _context.SignedLinks
-                .Where(sl => sl.TransactionId == targetTransactionId)
+                .Where(sl => sl.ResourceId == targetTransactionId)
                 .ToList();
 
             var receiptDocumentsForTransaction = _context.ReceiptDocuments
@@ -124,7 +124,7 @@ namespace TransactionService.Infrastructure.Tests.Data
             Assert.Multiple(() =>
             {
                 Assert.Single(signedLinksForTransaction);
-                Assert.Equal(targetTransactionId, signedLinksForTransaction.First().TransactionId);
+                Assert.Equal(targetTransactionId, signedLinksForTransaction.First().ResourceId);
                 Assert.Single(receiptDocumentsForTransaction);
                 Assert.Equal(targetTransactionId, receiptDocumentsForTransaction.First().TransactionId);
             });

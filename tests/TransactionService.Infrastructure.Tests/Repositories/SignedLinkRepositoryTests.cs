@@ -28,8 +28,8 @@ namespace TransactionService.Infrastructure.Tests.Repositories
         public async Task GetByIdAsync_WithValidId_ShouldReturnSignedLink()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
-            var signedLink = new SignedLink(transactionId, "https://example.com/receipt/123", DateTime.UtcNow.AddHours(24));
+            var resourceId = Guid.NewGuid();
+            var signedLink = new SignedLink(resourceId, "https://example.com/receipt/123", DateTime.UtcNow.AddHours(24));
             
             _context.SignedLinks.Add(signedLink);
             await _context.SaveChangesAsync();
@@ -42,7 +42,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             {
                 Assert.NotNull(result);
                 Assert.Equal(signedLink.Id, result.Id);
-                Assert.Equal(transactionId, result.TransactionId);
+                Assert.Equal(resourceId, result.ResourceId);
             });
         }
 
@@ -71,24 +71,24 @@ namespace TransactionService.Infrastructure.Tests.Repositories
         public async Task GetByTransactionIdAsync_WithValidId_ShouldReturnAllLinksForTransaction()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
+            var resourceId = Guid.NewGuid();
             var otherTransactionId = Guid.NewGuid();
             
-            var link1 = new SignedLink(transactionId, "https://example.com/receipt/1", DateTime.UtcNow.AddHours(24));
-            var link2 = new SignedLink(transactionId, "https://example.com/receipt/2", DateTime.UtcNow.AddHours(48));
+            var link1 = new SignedLink(resourceId, "https://example.com/receipt/1", DateTime.UtcNow.AddHours(24));
+            var link2 = new SignedLink(resourceId, "https://example.com/receipt/2", DateTime.UtcNow.AddHours(48));
             var link3 = new SignedLink(otherTransactionId, "https://example.com/receipt/3", DateTime.UtcNow.AddHours(24));
 
             _context.SignedLinks.AddRange(link1, link2, link3);
             await _context.SaveChangesAsync();
 
             // Act
-            var result = await _repository.GetByTransactionIdAsync(transactionId);
+            var result = await _repository.GetByTransactionIdAsync(resourceId);
 
             // Assert
             Assert.Multiple(() =>
             {
                 Assert.Equal(2, result.Count());
-                Assert.True(result.All(sl => sl.TransactionId == transactionId));
+                Assert.True(result.All(sl => sl.ResourceId == resourceId));
             });
         }
 
@@ -96,11 +96,11 @@ namespace TransactionService.Infrastructure.Tests.Repositories
         public async Task GetActiveByTransactionIdAsync_WithActiveLink_ShouldReturnActiveLink()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
-            var activeLink = new SignedLink(transactionId, "https://example.com/receipt/active", DateTime.UtcNow.AddHours(24));
+            var resourceId = Guid.NewGuid();
+            var activeLink = new SignedLink(resourceId, "https://example.com/receipt/active", DateTime.UtcNow.AddHours(24));
             var expiredLink = new SignedLink
             {
-                TransactionId = transactionId,
+                ResourceId = resourceId,
                 ShareableUrl = "https://example.com/receipt/expired",
                 ExpiresAt = DateTime.UtcNow.AddHours(-1),
                 ResourceType = "Receipt",
@@ -111,7 +111,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             await _context.SaveChangesAsync();
 
             // Act
-            var result = await _repository.GetActiveByTransactionIdAsync(transactionId);
+            var result = await _repository.GetActiveByTransactionIdAsync(resourceId);
 
             // Assert
             Assert.Multiple(() =>
@@ -126,8 +126,8 @@ namespace TransactionService.Infrastructure.Tests.Repositories
         public async Task AddAsync_WithValidSignedLink_ShouldAddToDatabase()
         {
             // Arrange
-            var transactionId = Guid.NewGuid();
-            var signedLink = new SignedLink(transactionId, "https://example.com/receipt/new", DateTime.UtcNow.AddHours(24));
+            var resourceId = Guid.NewGuid();
+            var signedLink = new SignedLink(resourceId, "https://example.com/receipt/new", DateTime.UtcNow.AddHours(24));
 
             // Act
             var result = await _repository.AddAsync(signedLink);
@@ -139,7 +139,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             Assert.Multiple(() =>
             {
                 Assert.NotNull(saved);
-                Assert.Equal(transactionId, saved.TransactionId);
+                Assert.Equal(resourceId, saved.ResourceId);
             });
         }
 
@@ -186,7 +186,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             var activeValidLink = new SignedLink(Guid.NewGuid(), "https://example.com/receipt/valid", DateTime.UtcNow.AddHours(24));
             var expiredActiveLink = new SignedLink
             {
-                TransactionId = Guid.NewGuid(),
+                ResourceId = Guid.NewGuid(),
                 ShareableUrl = "https://example.com/receipt/expired-active",
                 ExpiresAt = DateTime.UtcNow.AddHours(-1),
                 ResourceType = "Receipt",
@@ -194,7 +194,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             };
             var expiredInactiveLink = new SignedLink
             {
-                TransactionId = Guid.NewGuid(),
+                ResourceId = Guid.NewGuid(),
                 ShareableUrl = "https://example.com/receipt/expired-inactive",
                 ExpiresAt = DateTime.UtcNow.AddHours(-1),
                 ResourceType = "Receipt",
@@ -221,7 +221,7 @@ namespace TransactionService.Infrastructure.Tests.Repositories
             // Arrange
             var expiredActiveLink = new SignedLink
             {
-                TransactionId = Guid.NewGuid(),
+                ResourceId = Guid.NewGuid(),
                 ShareableUrl = "https://example.com/receipt/expired",
                 ExpiresAt = DateTime.UtcNow.AddHours(-1),
                 ResourceType = "Receipt",

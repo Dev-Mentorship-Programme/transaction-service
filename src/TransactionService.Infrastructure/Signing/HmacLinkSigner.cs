@@ -4,8 +4,8 @@ using System.Text;
 namespace TransactionService.Infrastructure.Signing;
 public interface ILinkSigner
 {
-    string SignToken(Guid transactionId, TimeSpan ttl);
-    bool VerifyToken(string token, out Guid transactionId);
+    string SignToken(Guid resourceId, TimeSpan ttl);
+    bool VerifyToken(string token, out Guid resourceId);
 }
 
 public class HmacLinkSigner : ILinkSigner
@@ -17,17 +17,17 @@ public class HmacLinkSigner : ILinkSigner
         _key = Encoding.UTF8.GetBytes(key);
     }
 
-    public string SignToken(Guid transactionId, TimeSpan ttl)
+    public string SignToken(Guid resourceId, TimeSpan ttl)
     {
-        var payload = $"{transactionId}|{DateTimeOffset.UtcNow.Add(ttl).ToUnixTimeSeconds()}";
+        var payload = $"{resourceId}|{DateTimeOffset.UtcNow.Add(ttl).ToUnixTimeSeconds()}";
         var sig = HmacSha256(payload);
         var token = Convert.ToBase64String(Encoding.UTF8.GetBytes(payload)) + "." + Convert.ToBase64String(sig);
         return token;
     }
 
-    public bool VerifyToken(string token, out Guid transactionId)
+    public bool VerifyToken(string token, out Guid resourceId)
     {
-        transactionId = Guid.Empty;
+        resourceId = Guid.Empty;
         try
         {
             var parts = token.Split('.');
@@ -37,7 +37,7 @@ public class HmacLinkSigner : ILinkSigner
             var expected = HmacSha256(payload);
             if (!sig.SequenceEqual(expected)) return false;
             var pieces = payload.Split('|');
-            transactionId = Guid.Parse(pieces[0]);
+            resourceId = Guid.Parse(pieces[0]);
             var exp = DateTimeOffset.FromUnixTimeSeconds(long.Parse(pieces[1]));
             return DateTimeOffset.UtcNow <= exp;
         }
