@@ -1,6 +1,5 @@
-﻿using System.Net;
+using System.Net;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
@@ -15,7 +14,7 @@ namespace TransactionService.Api.Tests
         public async Task Health_ReturnsOk()
         {
             var response = await _client.GetAsync("/health");
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
